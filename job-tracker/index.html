@@ -231,7 +231,10 @@ function renderCard(job) {
   else if ((tab === "todo" || tab === "test") && d != null && d >= 0 && d <= 7) tags.append(el("span", "tag t-soon", "一周内截止"));
   if (recentChange(job)) {
     let t = CHANGE_LABEL[job.change] || "有更新";
-    if (job.change === "deadline_changed" && job.prevDeadline) t += "（原 " + job.prevDeadline.slice(5) + "）";
+    if (job.change === "deadline_changed" && job.prevDeadline) {
+      const prev = /^\d{4}-\d{2}-\d{2}$/.test(job.prevDeadline) ? job.prevDeadline.slice(5) : job.prevDeadline;
+      t += "（原 " + prev + "）";
+    }
     tags.append(el("span", "tag t-new", t));
   }
   if (job.category) tags.append(el("span", "tag", job.category));
