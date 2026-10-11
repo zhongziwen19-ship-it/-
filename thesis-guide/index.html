@@ -1,0 +1,791 @@
+<title>同人展论文工作台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;800&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: 左侧粘性目录 + 右侧单栏阅读区；手机端目录变为顶部横向滚动条。
+   视觉取自同人本孔版印刷（riso）：荧光粉 + 联邦蓝两色套印，纸面微带冷调。 */
+:root{
+  --paper:#f5f6fa; --sheet:#ffffff; --ink:#1d2033; --ink-2:#4a4f68; --line:#dfe2ec;
+  --pink:#d62f6d; --pink-soft:#fde7ef; --blue:#2f5fb3; --blue-soft:#e6eefb;
+  --ok:#2c8a5a; --ok-soft:#e3f4ea; --warn:#b26a00; --warn-soft:#fff2dc; --bad:#c0392b; --bad-soft:#fde6e3;
+  --f-display:"Noto Serif SC","Songti SC","SimSun",serif;
+  --f-body:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#14161f; --sheet:#1c1f2b; --ink:#e8e9f1; --ink-2:#a9adc2; --line:#2e3243;
+  --pink:#ff6a9a; --pink-soft:#3a1a29; --blue:#7fa6ee; --blue-soft:#1b2640;
+  --ok:#5fc48c; --ok-soft:#173326; --warn:#f0a948; --warn-soft:#352812; --bad:#ff7d6e; --bad-soft:#3a1d1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#14161f; --sheet:#1c1f2b; --ink:#e8e9f1; --ink-2:#a9adc2; --line:#2e3243;
+  --pink:#ff6a9a; --pink-soft:#3a1a29; --blue:#7fa6ee; --blue-soft:#1b2640;
+  --ok:#5fc48c; --ok-soft:#173326; --warn:#f0a948; --warn-soft:#352812; --bad:#ff7d6e; --bad-soft:#3a1d1a; color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:15.5px;line-height:1.75}
+a{color:var(--blue)}
+:focus-visible{outline:2px solid var(--pink);outline-offset:2px}
+.wrap{display:grid;grid-template-columns:220px minmax(0,1fr);gap:40px;max-width:1180px;margin:0 auto;padding-inline:24px;padding-block:28px 80px}
+nav.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 20px);align-self:start;display:flex;flex-direction:column;gap:2px}
+nav.toc .brand{font-family:var(--f-display);font-weight:800;font-size:17px;line-height:1.35;margin-bottom:14px}
+nav.toc .brand small{display:block;font-family:var(--f-body);font-weight:400;font-size:12px;color:var(--ink-2);margin-top:4px}
+nav.toc a{text-decoration:none;color:var(--ink-2);padding:6px 10px;border-radius:6px;font-size:14px}
+nav.toc a:hover{background:var(--sheet);color:var(--ink)}
+nav.toc a.on{color:var(--pink);background:var(--pink-soft);font-weight:500}
+.themebtn{margin-top:16px;font:inherit;font-size:12.5px;color:var(--ink-2);background:none;border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer;align-self:flex-start}
+main{min-width:0;display:flex;flex-direction:column;gap:56px}
+section{scroll-margin-top:24px;min-width:0}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.35;margin:0}
+h1{font-size:clamp(26px,4vw,36px);font-weight:800}
+h2{font-size:24px;font-weight:800;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+h2 .eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;color:var(--pink);font-weight:500}
+h3{font-size:17.5px;font-weight:600;margin-top:4px}
+p{margin:0;max-width:68ch}
+.lede{color:var(--ink-2);max-width:66ch}
+.stack{display:flex;flex-direction:column;gap:14px}
+.sheet{background:var(--sheet);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.pill{display:inline-flex;align-items:center;font-size:12px;line-height:1;padding:5px 8px;border-radius:999px;font-weight:500;white-space:nowrap}
+.p-S{background:var(--pink);color:#fff}
+.p-A{background:var(--pink-soft);color:var(--pink)}
+.p-B{background:var(--blue-soft);color:var(--blue)}
+.p-C{background:var(--line);color:var(--ink-2)}
+.p-ok{background:var(--ok-soft);color:var(--ok)}
+.p-warn{background:var(--warn-soft);color:var(--warn)}
+.p-bad{background:var(--bad-soft);color:var(--bad)}
+
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:end}
+.claim{font-family:var(--f-display);font-size:18px;line-height:1.7;border-left:3px solid var(--pink);padding-left:16px;max-width:60ch;margin-top:14px}
+.count{text-align:right}
+.count .num{font-family:var(--f-mono);font-size:64px;line-height:1;color:var(--pink)}
+.count .lab{font-size:13px;color:var(--ink-2)}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.fact{background:var(--sheet);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;min-width:0}
+.fact b{display:block;font-size:12px;color:var(--ink-2);font-weight:500;letter-spacing:.04em}
+.fact span{font-size:14.5px}
+
+/* model svg */
+.model{overflow-x:auto}
+.model svg{display:block;min-width:640px;width:100%;height:auto}
+.model .box{fill:var(--sheet);stroke:var(--ink);stroke-width:1.5}
+.model .box.core{stroke:var(--pink);stroke-width:2}
+.model .ctrl{fill:var(--paper);stroke:var(--ink-2);stroke-dasharray:5 4}
+.model text{fill:var(--ink);font-family:var(--f-body);font-size:15px}
+.model .sm{font-size:12px;fill:var(--ink-2)}
+.model .hl{font-family:var(--f-mono);font-size:13px;fill:var(--pink)}
+.model .arr{stroke:var(--ink);stroke-width:1.6;fill:none}
+.model .dash{stroke:var(--ink-2);stroke-width:1.4;fill:none;stroke-dasharray:6 5}
+.model marker path{fill:var(--ink)}
+
+/* timeline / sprint */
+.days{display:flex;flex-direction:column;gap:0;border-left:2px solid var(--line);margin-left:8px}
+.day{position:relative;padding:0 0 22px 22px}
+.day::before{content:"";position:absolute;left:-7px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--sheet);border:2px solid var(--blue)}
+.day.key::before{background:var(--pink);border-color:var(--pink)}
+.day .when{font-family:var(--f-mono);font-size:13px;color:var(--blue)}
+.day.key .when{color:var(--pink)}
+.day h3{margin:2px 0 6px}
+.tasks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.tasks li{display:flex;gap:10px;align-items:flex-start}
+.tasks input{margin-top:6px;accent-color:var(--pink);flex:none;width:16px;height:16px}
+.tasks label{cursor:pointer}
+.tasks input:checked + label{color:var(--ink-2);text-decoration:line-through}
+.progress{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--ink-2)}
+.bar{flex:1;height:8px;background:var(--line);border-radius:99px;overflow:hidden;max-width:360px}
+.bar i{display:block;height:100%;background:var(--pink);width:0;transition:width .3s}
+
+/* literature */
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--sheet);color:var(--ink-2);padding:5px 12px;border-radius:999px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.search{font:inherit;font-size:14px;padding:7px 12px;border:1px solid var(--line);border-radius:8px;background:var(--sheet);color:var(--ink);min-width:0;flex:1 1 220px;max-width:340px}
+.tierhead{display:flex;gap:12px;align-items:baseline;margin-top:10px;flex-wrap:wrap}
+.tierhead h3{margin:0}
+.tierhead p{font-size:13.5px;color:var(--ink-2)}
+details.ref{background:var(--sheet);border:1px solid var(--line);border-radius:var(--r)}
+details.ref[open]{border-color:var(--ink-2)}
+details.ref summary{list-style:none;cursor:pointer;padding:14px 18px;display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:12px;align-items:start}
+details.ref summary::-webkit-details-marker{display:none}
+.rn{font-family:var(--f-mono);color:var(--pink);font-size:14px;padding-top:2px}
+.rt{min-width:0}
+.rt b{font-weight:700}
+.rt .au{display:block;font-size:13px;color:var(--ink-2)}
+.rt .use{display:block;font-size:13.5px;margin-top:3px}
+.rtags{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.rbody{padding:0 18px 18px 74px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 24px}
+.rbody .f{min-width:0}
+.rbody .f.w{grid-column:1/-1}
+.rbody .f b{display:block;font-size:12px;letter-spacing:.06em;color:var(--blue);font-weight:700;margin-bottom:2px}
+.rbody .f.lim b{color:var(--bad)}
+.rbody .f.how{background:var(--blue-soft);border-radius:8px;padding:12px 14px}
+.rbody .f.chk{background:var(--warn-soft);border-radius:8px;padding:10px 14px;color:var(--ink)}
+.gbt{font-size:13px;font-family:var(--f-mono);background:var(--paper);border:1px dashed var(--line);border-radius:6px;padding:8px 10px;word-break:break-word;display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
+.gbt span{min-width:0}
+.copy{font:inherit;font-size:12px;border:1px solid var(--line);background:var(--sheet);color:var(--ink-2);border-radius:5px;padding:2px 8px;cursor:pointer;flex:none}
+.ex{font-family:var(--f-display);font-size:14.5px;border-left:2px solid var(--blue);padding-left:10px;margin-top:6px}
+.empty{color:var(--ink-2);font-size:14px}
+
+/* issues */
+.issue{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;background:var(--sheet);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
+.issue .sev{padding-top:3px}
+.issue h3{margin:0 0 4px;font-size:16px}
+.issue p+p{margin-top:6px}
+.issue .fix{color:var(--ink-2);font-size:14.5px}
+.issue .fix b{color:var(--ok)}
+
+/* tables */
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--sheet)}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:620px}
+th,td{text-align:left;vertical-align:top;padding:10px 14px;border-bottom:1px solid var(--line)}
+th{font-size:12.5px;color:var(--ink-2);font-weight:700;letter-spacing:.04em;background:var(--paper)}
+tr:last-child td{border-bottom:none}
+td.n{font-family:var(--f-mono);white-space:nowrap;color:var(--blue)}
+
+/* outline */
+.chap{background:var(--sheet);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px}
+.chap header{display:flex;justify-content:space-between;gap:12px;align-items:baseline;flex-wrap:wrap}
+.chap header .mono{font-size:13px;color:var(--ink-2)}
+.chap ol{margin:10px 0 0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.chap li{display:grid;grid-template-columns:44px minmax(0,1fr);gap:8px}
+.chap li .sn{font-family:var(--f-mono);font-size:13px;color:var(--pink);padding-top:2px}
+.chap li small{display:block;color:var(--ink-2);font-size:13px}
+.chap .refs{margin-top:10px;font-size:13px;color:var(--ink-2)}
+
+.cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.qa{background:var(--sheet);border:1px solid var(--line);border-radius:var(--r);padding:14px 18px}
+.qa b{display:block;margin-bottom:4px}
+.qa p{font-size:14.5px;color:var(--ink-2)}
+.note{font-size:13px;color:var(--ink-2)}
+ul.plain{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:4px}
+
+@media (max-width:900px){
+  .wrap{grid-template-columns:minmax(0,1fr);gap:20px;padding-inline:16px}
+  nav.toc{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;flex-direction:row;overflow-x:auto;background:var(--paper);padding-block:8px;margin-inline:-16px;padding-inline:16px;border-bottom:1px solid var(--line)}
+  nav.toc .brand,.themebtn{display:none}
+  nav.toc a{white-space:nowrap}
+  .facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .rbody{grid-template-columns:minmax(0,1fr);padding:0 16px 16px}
+  .cols{grid-template-columns:minmax(0,1fr)}
+  .hero{grid-template-columns:minmax(0,1fr)}
+  .count{text-align:left}
+}
+@media (max-width:520px){
+  details.ref summary{grid-template-columns:36px minmax(0,1fr)}
+  .rtags{grid-column:2;justify-content:flex-start}
+  .facts{grid-template-columns:minmax(0,1fr)}
+}
+</style>
+
+<div class="wrap">
+<nav class="toc" id="toc" aria-label="目录">
+  <div class="brand">同人展论文工作台<small>情感能量与持续参与意愿研究</small></div>
+  <a href="#overview">总览</a>
+  <a href="#sprint">开题冲刺 10.11–10.27</a>
+  <a href="#issues">开题报告问题与建议</a>
+  <a href="#lit">文献精读库</a>
+  <a href="#cite">引用与核对规范</a>
+  <a href="#defense">答辩准备</a>
+  <a href="#outline">论文写作大纲</a>
+  <a href="#roadmap">全程写作路线</a>
+  <button class="themebtn" id="themebtn" type="button">切换深浅色</button>
+</nav>
+
+<main>
+
+<!-- 总览 -->
+<section id="overview" class="stack">
+  <div class="hero">
+    <div>
+      <h1>同人漫展参与者的情感能量与持续参与意愿研究</h1>
+      <p class="claim">同人漫展是参与者相互确认同属一群的传播场合。一场展会现场的仪式体验，与展后留存的情感能量相关联；情感能量又与趣缘群体认同和继续参加同人展的意愿相关联。</p>
+    </div>
+    <div class="count"><div class="num mono" id="dleft">16</div><div class="lab">天后提交开题报告并答辩<br>2026年10月27日</div></div>
+  </div>
+  <div class="facts">
+    <div class="fact"><b>核心理论</b><span>柯林斯 互动仪式链</span></div>
+    <div class="fact"><b>学科立场 / 辅助理论</b><span>凯瑞 仪式观 / 社会认同理论</span></div>
+    <div class="fact"><b>设计</b><span>访谈15–20人 → 预调查约100份 → 展后单次问卷300–350份</span></div>
+    <div class="fact"><b>主案例</b><span>CP33，日期待官方公布</span></div>
+  </div>
+  <div class="sheet model" role="img" aria-label="研究模型：仪式体验经H1到情感能量，情感能量经H2到趣缘群体认同、经H3到持续参与意愿，趣缘群体认同经H4到持续参与意愿；H5、H6为间接关联；保留仪式体验到持续参与意愿的直接关系">
+    <svg viewBox="0 0 900 330" xmlns="http://www.w3.org/2000/svg">
+      <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z"/></marker></defs>
+      <rect class="box" x="10" y="110" width="170" height="92" rx="10"/>
+      <text x="95" y="140" text-anchor="middle">仪式体验</text>
+      <text class="sm" x="95" y="163" text-anchor="middle">感知共在 · 共同关注</text>
+      <text class="sm" x="95" y="183" text-anchor="middle">情感共享 · 局外人界限</text>
+      <rect class="box core" x="270" y="128" width="150" height="56" rx="10"/>
+      <text x="345" y="162" text-anchor="middle">情感能量</text>
+      <rect class="box" x="480" y="20" width="170" height="56" rx="10"/>
+      <text x="565" y="54" text-anchor="middle">趣缘群体认同</text>
+      <rect class="box" x="710" y="128" width="170" height="56" rx="10"/>
+      <text x="795" y="162" text-anchor="middle">持续参与意愿</text>
+      <path class="arr" d="M180 156 H266" marker-end="url(#ah)"/><text class="hl" x="212" y="148">H1</text>
+      <path class="arr" d="M420 140 L478 70" marker-end="url(#ah)"/><text class="hl" x="424" y="98">H2</text>
+      <path class="arr" d="M420 156 H706" marker-end="url(#ah)"/><text class="hl" x="552" y="148">H3</text>
+      <path class="arr" d="M650 64 L742 126" marker-end="url(#ah)"/><text class="hl" x="702" y="86">H4</text>
+      <path class="dash" d="M95 202 Q 450 300 795 186" marker-end="url(#ah)"/>
+      <text class="sm" x="450" y="240" text-anchor="middle">直接关系（保留检验）</text>
+      <text class="sm" x="560" y="208" text-anchor="middle">H5 仪式体验→情感能量→持续参与意愿</text>
+      <text class="sm" x="560" y="226" text-anchor="middle">H6 仪式体验→情感能量→趣缘群体认同→持续参与意愿</text>
+      <rect class="ctrl" x="10" y="270" width="560" height="50" rx="8"/>
+      <text class="sm" x="290" y="300" text-anchor="middle">控制：现场即时情绪 · 兴趣对象热情 · 圈龄 · 近12个月参展次数 · 年龄 · 参展条件限制</text>
+      <rect class="ctrl" x="590" y="270" width="290" height="50" rx="8"/>
+      <text class="sm" x="735" y="300" text-anchor="middle">探索：参与身份分组 · 距展会天数</text>
+    </svg>
+  </div>
+  <p class="note">本页依据你上传的开题报告书（1011版）、文献综述（1011版）和写作指南（修订版）整理。文献要点来自综述原文和对这些文献的通行认识，凡标“需核”的内容，写进正文前都要回到原文确认。打勾进度只保存在你当前使用的浏览器里。</p>
+</section>
+
+<!-- 冲刺 -->
+<section id="sprint" class="stack">
+  <h2><span class="eyebrow">SPRINT</span>开题冲刺：10月11日 – 10月27日</h2>
+  <p class="lede">你的开题报告主体已经成形，剩下16天的重点是三件事：把待核文献和标黄处清干净，把几处前后不一致的地方统一，准备答辩讲稿和追问。导师意见栏需要导师签字，所以初稿最晚10月18日要发到两位导师手里。</p>
+  <div class="progress"><span>完成 <b id="pcount" class="mono">0/0</b></span><div class="bar"><i id="pbar"></i></div></div>
+  <div class="days" id="days"></div>
+</section>
+
+<!-- 问题 -->
+<section id="issues" class="stack">
+  <h2><span class="eyebrow">REVIEW</span>开题报告问题与建议</h2>
+  <p class="lede">通读三份材料后发现的问题，按严重程度排序。“必改”会在答辩或形式审查时直接被指出；“建议改”能明显降低被追问的风险；“可选”留到正式写论文时处理也可以。</p>
+  <div class="stack" id="issuelist"></div>
+</section>
+
+<!-- 文献 -->
+<section id="lit" class="stack">
+  <h2><span class="eyebrow">LITERATURE · 65</span>文献精读库</h2>
+  <p class="lede">65条文献按对本研究的重要程度分为四级，编号与你的参考文献表一致。点开每一条可以看到研究问题、理论、方法、结论、局限、你该在哪里怎样引用，以及需要核对的地方。建议先读完S级和A级，开题答辩的追问几乎都落在这两级。</p>
+  <div class="filters" role="group" aria-label="筛选文献">
+    <button class="chip" type="button" data-tier="all" aria-pressed="true">全部</button>
+    <button class="chip" type="button" data-tier="S" aria-pressed="false">S 理论基石</button>
+    <button class="chip" type="button" data-tier="A" aria-pressed="false">A 核心实证与测量</button>
+    <button class="chip" type="button" data-tier="B" aria-pressed="false">B 脉络支撑</button>
+    <button class="chip" type="button" data-tier="C" aria-pressed="false">C 背景与边缘</button>
+    <button class="chip" type="button" data-tier="chk" aria-pressed="false">只看待核</button>
+    <input class="search" id="q" type="search" placeholder="搜作者、关键词、变量…" aria-label="搜索文献">
+  </div>
+  <div class="stack" id="litlist"></div>
+</section>
+
+<!-- 引用规范 -->
+<section id="cite" class="stack">
+  <h2><span class="eyebrow">GB/T 7714-2015</span>引用与核对规范</h2>
+  <div class="cols">
+    <div class="sheet stack">
+      <h3>正文怎么标</h3>
+      <ul class="plain">
+        <li>你目前用的是顺序编码制，正文上标 [n]，参考文献按首次出现顺序编号，保持即可。开题报告正文和附页综述共用一套编号，改动一条要两处同步。</li>
+        <li>同一处引多篇写 [6,11]，连续编号写 [6-8]。</li>
+        <li>直接引用柯林斯、凯瑞的定义时，在编号后加页码，如 [38]<sup>86</sup> 或 [38]<span class="mono">86</span>，以手头的中译本为准。答辩时被问“原著哪里这样说”，能翻到页码就够了。</li>
+        <li>叙述别人的研究用“发现”“指出”“检验了”；你自己的假设和结论只用“预测”“关联”“数据支持”，不用“影响”“导致”“证实”。</li>
+        <li>转引要写明：没读到原文、只在别人的综述里看到的，写“转引自”，或者干脆不引。</li>
+      </ul>
+    </div>
+    <div class="sheet stack">
+      <h3>文献表常见问题</h3>
+      <ul class="plain">
+        <li>期刊 [J]：作者. 题名[J]. 刊名, 年, 卷(期): 起止页. 外文作者姓全大写、名缩写，3人以上写前3人加 et al. 或“等”。</li>
+        <li>专著 [M] 和译著：译著写成“柯林斯. 互动仪式链[M]. 林聚任, 王鹏, 宋丽君, 译. 北京: 商务印书馆, 2009.”，可以在综述里再补一条英文原著（Collins 2004, Princeton University Press）。</li>
+        <li>析出文献 [M]//：书名、编者、出版地、出版者、年份和页码缺一不可。[12][54] 目前缺项。</li>
+        <li>学位论文 [D]：作者. 题名[D]. 地点: 学校, 年份.</li>
+        <li>网络文献 [EB/OL]：要有题名、发布日期、引用日期和原发链接。转载页不算原发，[2] 要换成中新经纬原链接。</li>
+        <li>有DOI的外文文献尽量补上DOI，审核老师查起来快。</li>
+      </ul>
+    </div>
+  </div>
+  <div class="sheet stack">
+    <h3>核对的顺序</h3>
+    <p>65条不必平均用力。按“正文直接引用、支撑假设、提供量表”的优先级核：先核开题报告书正文里出现的约30条（见冲刺第1–3天），再核只在综述里出现的。每核完一条，在本页文献库里把它对应的标黄状态记下来，Word里同步取消标黄。在知网或Web of Science查不到的条目，不要写进正文。</p>
+  </div>
+</section>
+
+<!-- 答辩 -->
+<section id="defense" class="stack">
+  <h2><span class="eyebrow">DEFENSE</span>答辩准备</h2>
+  <p class="lede">开题答辩通常给学生5–10分钟陈述，其余时间回答提问，具体时长以学院通知为准。PPT控制在12页左右，每页只讲一件事。</p>
+  <div class="tbl"><table>
+    <thead><tr><th>页</th><th>内容</th><th>讲什么（约1分钟以内）</th></tr></thead>
+    <tbody id="pptrows"></tbody>
+  </table></div>
+  <h3>可能的追问与应答要点</h3>
+  <div class="cols" id="qalist"></div>
+</section>
+
+<!-- 大纲 -->
+<section id="outline" class="stack">
+  <h2><span class="eyebrow">OUTLINE</span>论文写作大纲</h2>
+  <p class="lede">七章结构沿用开题报告书第八部分，假设编号已统一为H1–H6。字数是参考，全文约3.5万字，以学院要求为准。每章后列出这一章主要用到的文献编号。</p>
+  <div class="stack" id="chapters"></div>
+</section>
+
+<!-- 路线 -->
+<section id="roadmap" class="stack">
+  <h2><span class="eyebrow">ROADMAP</span>开题后的全程写作路线</h2>
+  <p class="lede">整个计划卡在正式调查用哪一场展会上。CP32已于2026年5月在杭州举办，CP33的时间和城市在本页整理时还查不到官方公告。下面按“CP33在12月上中旬”排主线，同时给出两种备选。</p>
+  <div class="tbl"><table>
+    <thead><tr><th>时间</th><th>阶段</th><th>要完成的事</th><th>交付物</th></tr></thead>
+    <tbody id="roadrows"></tbody>
+  </table></div>
+  <div class="cols">
+    <div class="sheet stack"><h3>如果CP33在11月下旬或更早</h3><p>访谈和问卷编制压缩到3周内完成，预调查改在CP33前的一场中小型同人展后做，或者先在同好群里做线上认知访谈加小样本（约50份）预测，正式调查仍放在CP33。在开题报告里把这种调整写成预案，答辩时被问到不慌。</p></div>
+    <div class="sheet stack"><h3>如果CP33推迟到2027年</h3><p>正式调查改用2026年11月至12月间上海或周边的另一场同人展，展会选择标准写进第五章：以同人创作与交换为主、参与规模能支撑300份有效样本、有可识别的线上社群用于招募。论文写作顺延，不压缩数据分析时间。</p></div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<script>
+(function(){
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+/* 倒计时 */
+(function(){const t=new Date(2026,9,27);const n=new Date();n.setHours(0,0,0,0);const d=Math.round((t-n)/864e5);
+document.getElementById('dleft').textContent=d>0?d:(d===0?'今天':'已过');})();
+
+/* 主题切换 */
+document.getElementById('themebtn').addEventListener('click',()=>{const r=document.documentElement;const cur=r.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');const nx=cur==='dark'?'light':'dark';r.setAttribute('data-theme',nx);store.set('theme',nx)});
+const th=store.get('theme');if(th)document.documentElement.setAttribute('data-theme',th);
+
+/* ========== 冲刺计划 ========== */
+const DAYS=[
+ {w:"10.11 周日 – 10.12 周一",t:"统一口径，清掉明显的硬伤",k:false,items:[
+  "通读开题报告书，把假设统一为H1–H6，写作指南和答辩材料同步改编号（见问题1）",
+  "删掉正文里的括号说明，如“需找到艾媒原报告核对数字……”，没核实的数字先拿掉（问题2）",
+  "附页综述里的“表1 已有研究中的主要分歧”改为“附表1”，避免与正文表1重号（问题7）",
+  "向学院确认：10月27日是先提交再答辩，还是答辩当天交；纸质份数、是否需要上传系统、PPT时长"]},
+ {w:"10.12 – 10.14",t:"下载并核对正文直接引用的文献",k:false,items:[
+  "下载S级5篇、A级17篇原文，建一个文件夹按编号命名",
+  "核对开题报告书正文出现的文献：[1][2][3][6][11][13][14][15][17][18][21][24][25][29][35][38][48][50][51][52][53][54][56][58][60][63][64]",
+  "补齐 [1] 界面新闻题名与日期、[2] 中新经纬原发链接、[15] 卷期页码、[41] 题名、[54] 书名编者",
+  "核对2026年发表的条目确实存在且信息无误：[17][28][34][3]"]},
+ {w:"10.14 – 10.16",t:"精读三处理论原文，记页码",k:false,items:[
+  "柯林斯《互动仪式链》：四要素、四结果、情感能量定义，各记中译本页码",
+  "Reysen & Branscombe (2010)：抄下fanship与fandom两组原始题项，写进测量对照表",
+  "Wlodarczyk et al. (2020)：抄下感知情绪同步简版量表题项",
+  "确认Páez et al. (2015)讲的是“集体认同”还是“集体效能感”，指南示范段落与开题报告写法不一致"]},
+ {w:"10.16 – 10.17",t:"补测量对照表，修情感能量题项",k:false,items:[
+  "完成测量对照表：变量、定义、来源、题项数、时间指向、对应假设",
+  "情感能量题项加1–2道反向或低能量题（问题4），检查第5题与趣缘群体认同是否重叠",
+  "伦理部分补上年龄筛查：只调查18岁及以上参与者（问题5）",
+  "研究方法部分补上CP33日期未定时的备选方案（问题3）"]},
+ {w:"10.18 周日",t:"发初稿给两位导师",k:true,items:[
+  "导出PDF，连同文献综述一起发给校内、校外导师，附一段话说明想请导师重点看的两三处",
+  "约好导师反馈和签字的时间（最晚10月24日）"]},
+ {w:"10.18 – 10.21",t:"制作答辩PPT和讲稿",k:false,items:[
+  "按本页“答辩准备”的12页结构做PPT，模型图用开题报告图1",
+  "写6–8分钟讲稿，计时朗读两遍",
+  "把追问表里的8个问题各写出3句以内的回答"]},
+ {w:"10.21 – 10.23",t:"按导师意见修改，模拟答辩",k:false,items:[
+  "逐条落实导师意见，改动处同步到综述和PPT",
+  "找一两位同门模拟答辩，请他们专挑情感能量测量和单次问卷两处追问",
+  "填好封面、学号、校外导师信息，课程成绩单截图贴入"]},
+ {w:"10.24 – 10.26",t:"定稿与形式检查",k:false,items:[
+  "全文搜索“待核”“请填写”“标黄”，确认一处不剩；取消所有黄色高亮",
+  "检查参考文献格式、编号连续、正文每个编号都能在表里找到",
+  "导师意见栏签字，安全承诺勾选并签名，开题日期与填表日期写10月27日",
+  "按学院要求打印装订；PPT拷到U盘并另存一份到网盘"]},
+ {w:"10.27 周二",t:"提交开题报告，参加开题答辩",k:true,items:[
+  "提交开题报告书",
+  "答辩时带纸笔，记下每位老师的意见原话",
+  "当天晚上把意见整理成清单，按“必须改/建议改/解释即可”分类"]}
+];
+const dWrap=document.getElementById('days');
+let idx=0;
+DAYS.forEach(d=>{const el=document.createElement('div');el.className='day'+(d.k?' key':'');
+ el.innerHTML='<div class="when">'+esc(d.w)+'</div><h3>'+esc(d.t)+'</h3><ul class="tasks">'+d.items.map(it=>{const id='t'+(idx++);return '<li><input type="checkbox" id="'+id+'"><label for="'+id+'">'+esc(it)+'</label></li>'}).join('')+'</ul>';
+ dWrap.appendChild(el)});
+function prog(){const all=dWrap.querySelectorAll('input');const done=[...all].filter(i=>i.checked).length;document.getElementById('pcount').textContent=done+'/'+all.length;document.getElementById('pbar').style.width=(all.length?done/all.length*100:0)+'%'}
+let saved={};try{saved=JSON.parse(store.get('sprint')||'{}')||{}}catch(e){}
+dWrap.querySelectorAll('input').forEach(i=>{i.checked=!!saved[i.id];i.addEventListener('change',()=>{saved[i.id]=i.checked;store.set('sprint',JSON.stringify(saved));prog()})});
+prog();
+
+/* ========== 问题清单 ========== */
+const ISSUES=[
+ {s:"bad",l:"必改",t:"假设数量前后不一致：开题报告H1–H6，写作指南H1–H5",
+  p:"开题报告书把“趣缘群体认同正向预测持续参与意愿”单列为H4，间接关联顺延为H5、H6，模型图也是六条。写作指南第五节、第十二节4.4–4.5和答辩追问表仍按五条写。答辩时如果PPT、讲稿和报告编号对不上，很容易被抓住。",
+  f:"以开题报告的H1–H6为准。保留H4是对的，因为H6的连续中介需要认同到意愿这条路径。同时把开题报告里H3和H4共用的那段推导拆开：现在一段话里既用柯林斯论证H3，又用社会认同理论论证H4，读者分不清哪句支撑哪条。"},
+ {s:"bad",l:"必改",t:"正文里还留着给自己的提示语和未核实的数字",
+  p:"选题背景第一段写着“艾媒咨询数据显示，2024年中国泛二次元用户规模约5.03亿人（需找到艾媒原报告核对数字并补入参考文献，核实前不宜写入正文）”。综述里还有“具体测量指标与结果需对照原文核实后再细化”“该文为扫描版”“开题后扩大检索范围再确认此判断”等括注，参考文献里有十几处标黄。",
+  f:"10月12日前删掉所有括注。艾媒数据找不到原报告就删，背景用中新经纬和界面新闻两个数字已经够了。“在本次检索范围内尚未见到”这句保留，括注删掉。"},
+ {s:"bad",l:"必改",t:"正式调查依赖的CP33日期还没有着落",
+  p:"开题报告把CP33定为主要案例，工作计划里写着“CP33结束后一至三周”，但没有给出日期，也没有备选。我查到的信息是CP32于2026年5月1–2日、4–5日在杭州国际博览中心举办，CP33的时间地点尚无公告。如果CP33在12月，你11月要完成访谈、12月要做完预调查再定稿问卷，时间很紧；如果不在上海，问卷里的场馆筛选题也要改。",
+  f:"在方法部分加两三句预案：说明展会选择标准，写明CP33时间不合适时改用哪一类展会。答辩前去 allcpp 或 COMICUP 官方微博再查一次日期，查到就写进工作计划。"},
+ {s:"warn",l:"建议改",t:"情感能量五道题全是正向表述，和你在综述里的论证对不上",
+  p:"综述引Boyns与Luery说明失败的互动会留下负面情感能量，并明确写了“题项需要允许受访者报告较低的情感能量”。但开题报告列出的五道题全部是正向句式，全选“同意”的人和真正高情感能量的人无法区分，也容易出现默许偏差。另外第5题“想到同好圈子里的事，我感到有精神”以同好圈子为对象，和趣缘群体认同的参照对象重合，HTMT可能偏高；第4题里的“整理收藏”又靠近兴趣对象热情。",
+  f:"补一两道低能量题，比如“这次展会结束后的这段时间里，我不太想主动联系同好”，作为反向题在预调查中检验。第5题改成指向自身状态的说法，例如“这次展会结束后的这段时间里，我做同人相关的事时比较有精神”，把“圈子”从题干里拿掉。"},
+ {s:"warn",l:"建议改",t:"研究伦理缺少对未成年参与者的处理",
+  p:"同人展参与者中有不少中学生。问卷通过微博超话、QQ群和小红书公开招募，如果不筛年龄，就可能收到未成年人的回答，开题报告的伦理部分只写了知情同意与匿名。答辩老师问到时，“不收集个人身份信息”并不能回答这个问题。",
+  f:"在问卷开头加年龄筛查题，只保留18岁及以上的作答，访谈对象同样限定成年人。论文局限里说明这会使样本偏向成年参与者。"},
+ {s:"warn",l:"建议改",t:"仪式体验四个维度里有三个没有现成量表，综述没交代来源",
+  p:"变量表写着情感共享参考Wlodarczyk等，其余三维“依据柯林斯定义与访谈编制”。综述第三部分详细讨论了情感能量的测量，却没有讨论共在感、共同关注、局外人界限这三维已有研究怎么测。答辩时这比情感能量更容易被追问，因为它是自变量。",
+  f:"在综述3.2或3.3补一段：薛海波[48]的人际互动仪式维度、Xie与Li[49]的节庆仪式要素、Tang等[18]的游客互动量表各自测了什么，哪些题可以改编。你的综述已经引了这三篇，只是没从测量角度写。"},
+ {s:"warn",l:"建议改",t:"同一份文件里出现两个“表1”",
+  p:"开题报告书正文有“表1 变量与测量”，附页综述又有“表1 已有研究中的主要分歧”。两部分装订在一起，读者会混淆。",
+  f:"综述里的表改为“附表1”，或顺延为“表4”，正文引用同步改。"},
+ {s:"warn",l:"建议改",t:"Páez等研究的结论在两份材料里写法不同",
+  p:"写作指南的H1示范段落说参与者“集会后的积极情绪与集体效能感越高”，开题报告和综述写的是“积极情绪与集体认同越高”。两种说法在原文中可能都出现过，但你引它支撑的假设不同，写法要统一并且以原文为准。",
+  f:"精读Páez等(2015)的摘要和讨论部分，确定用哪种说法，H1推导里只写与情感能量相关的那部分结果。"},
+ {s:"warn",l:"建议改",t:"“距展会天数”这个探索变量有混淆",
+  p:"距展会越久，情感能量可能减弱，但回忆现场体验的准确度也在下降，而且早填和晚填的人可能本身就不同（越投入的人越早看到问卷）。如果直接把天数和情感能量的相关解释成衰减，会被追问。",
+  f:"开题阶段只需在分析计划里加半句：分析时控制招募渠道和兴趣对象热情，结果只作描述性解释。"},
+ {s:"ok",l:"可选",t:"个别文献与主题距离较远，可以替换",
+  p:"[44] 强月新、孙志鹏关于官员直播带货的研究，只用来说明互动仪式链被用于线上场景，和同人展关系很弱；[46] 学术酒吧、[47] 信息系统领域综述也属于点到即止。它们不会出错，但会稀释综述的密度。",
+  f:"可以换成一篇用互动仪式链分析弹幕或直播粉丝互动的传播学论文。在知网用“互动仪式链 弹幕”“互动仪式链 粉丝 直播”检索，选新闻传播类核心期刊的一篇即可。"},
+ {s:"ok",l:"可选",t:"持续参与意愿一节缺少中文文献",
+  p:"综述第五部分引的全是英文节事研究，国内关于节事重游意愿、粉丝持续参与意愿的问卷研究不少，审稿时可能被问到国内有没有相关测量。",
+  f:"用“节事 重游意愿”“持续参与意愿 粉丝”“漫展 重游”在知网检索，补一两篇已核实的中文实证研究。没时间就留到写第二章时再补。"},
+ {s:"ok",l:"可选",t:"模型图中H5、H6的说明文字压在虚线上",
+  p:"开题报告图1里H5、H6两行说明写在情感能量到持续参与意愿的箭头下方，和直接关系的虚线终点挤在一起，打印后不容易看清。",
+  f:"把这两行移到图下方单独作为图注，或者参照本页总览里的模型图排布。"}
+];
+document.getElementById('issuelist').innerHTML=ISSUES.map((x,i)=>'<article class="issue"><div class="sev"><span class="pill p-'+x.s+'">'+x.l+'</span></div><div><h3><span class="mono">'+(i+1)+'.</span> '+esc(x.t)+'</h3><p>'+esc(x.p)+'</p><p class="fix"><b>怎么改：</b>'+esc(x.f)+'</p></div></article>').join('');
+
+/* ========== 文献库 ========== */
+/* 字段：n编号 t等级 ti题名 au作者年份 k类型 u用途 q研究问题 th理论 m方法 f结论 l局限 h怎么用 e示范句 r著录 c核对 */
+const L=[
+{n:38,t:"S",ti:"互动仪式链",au:"柯林斯（Collins R.），2004；林聚任等译，2009",k:"理论原著",u:"核心理论；H1、H3、H5、H6；情感能量定义",
+ q:"社会互动如何产生团结、情感能量和符号，个体为什么一次次回到某类互动之中。",
+ th:"在涂尔干宗教仪式理论和戈夫曼互动秩序的基础上提出互动仪式链理论。",
+ m:"理论建构，结合历史与日常互动的大量例证。",
+ f:"四个要素（身体共在、对局外人设限、共同关注、情感共享）达到较高程度时产生四种结果（群体团结、个体情感能量、群体符号、道德感）；情感能量会推动个体寻找下一次能带来高情感能量的互动，互动因此连成链条。",
+ l:"理论本身没有给出测量工具；情感能量与仪式投入之间存在循环关系，单次横截面数据只能检验其中一段；对线上、大规模人群中的共在感讨论有限。",
+ h:"第二章2.4、第四章H1和H3推导、第五章情感能量的概念定义都要回到这本书。直接引用定义时写页码。你在理论框架里讲的两处情境化处理（测感知共在、展后测情感能量）都要以这本书的原话为起点。",
+ e:"柯林斯认为，互动仪式的要素达到较高程度时，参与者会获得情感能量，即一种在互动结束后仍能持续一段时间的自信与行动热情[38]。",
+ r:"柯林斯. 互动仪式链[M]. 林聚任, 王鹏, 宋丽君, 译. 北京: 商务印书馆, 2009.",c:"记录四要素、四结果和情感能量定义所在的中译本页码。可另补英文原著：COLLINS R. Interaction ritual chains[M]. Princeton: Princeton University Press, 2004."},
+{n:51,t:"S",ti:"Emotional energy as the common denominator of rational action",au:"Collins R., 1993",k:"理论论文",u:"H3；情感能量与选择",
+ q:"人们在不同的行动和互动之间如何做选择。",
+ th:"互动仪式理论与理性选择理论的结合。",
+ m:"理论论证。",
+ f:"情感能量是人们比较不同行动时共同依据的尺度，人们倾向于选择能带来更高情感能量的互动。",
+ l:"同样没有测量方案；“选择”与“意愿”之间还隔着条件限制，所以你需要参展条件限制这个控制变量。",
+ h:"用在H3推导：情感能量为什么能预测再次参展的意愿。和[38]一起引，一句话即可。",
+ e:"柯林斯进一步指出，人们倾向于选择能带来更高情感能量的互动[51]，一次展会中获得的情感能量因此可能与再次参展的意愿相关联。",
+ r:"COLLINS R. Emotional energy as the common denominator of rational action[J]. Rationality and Society, 1993, 5(2): 203-230.",c:""},
+{n:35,t:"S",ti:"作为文化的传播",au:"凯瑞（Carey J. W.），1989；丁未译，2005",k:"理论原著",u:"学科立场；第一章定位、第七章讨论",
+ q:"传播应当被怎样理解，美国传播研究为什么需要文化取向。",
+ th:"传播的传递观与仪式观之分，受杜威、芝加哥学派影响。",
+ m:"理论论文集。",
+ f:"传递观把传播看作信息在空间中的传送；仪式观把传播看作共享信仰的表征，重在在时间中维系一个共同体。",
+ l:"不提供可操作的变量，只能作为立场；如果在论文里展开太多，会和柯林斯的理论争篇幅。",
+ h:"第一章研究定位和第二章2.3各一段，第七章讨论里回到“同人展是相互确认同属一群的传播场合”。答辩被问“和传播学有什么关系”时用它回答。",
+ e:"凯瑞把传播看作在时间中维系一个共同体的过程[35]，按照这一观点，同人展上的合影、交换无料和圈内用语，都是参与者相互确认同属一群的传播实践。",
+ r:"凯瑞. 作为文化的传播[M]. 丁未, 译. 北京: 华夏出版社, 2005.",c:"译者“丁未”标黄，核对版权页；引用传递观与仪式观定义时记页码。"},
+{n:56,t:"S",ti:"An integrative theory of intergroup conflict",au:"Tajfel H., Turner J. C., 1979",k:"理论原著（析出）",u:"辅助理论；H2、H4、H6",
+ q:"群体成员身份如何影响个体的自我概念和群际行为。",
+ th:"社会认同理论：社会分类、社会认同、社会比较。",
+ m:"理论建构，基于最简群体范式等实验研究。",
+ f:"个体的自我概念有一部分来自其所属群体，人们通过归类与比较获得积极的社会认同。",
+ l:"原理论关注群际冲突，用在趣缘群体时要说明你只取其中“自我归类与归属”的部分；不涉及情感能量。",
+ h:"第二章2.6开头、第四章H2和H4推导。说明它补充了柯林斯：把“我是否属于这个群体”讲得更细，并提供可测概念。",
+ e:"社会认同理论认为，个体的自我概念有一部分来自其所属的群体[56]，展后仍愿意主动与同好往来的人，更可能把同好群体看作自己的一部分。",
+ r:"TAJFEL H, TURNER J C. An integrative theory of intergroup conflict[M]//AUSTIN W G, WORCHEL S. The social psychology of intergroup relations. Monterey: Brooks/Cole, 1979: 33-47.",c:""},
+{n:58,t:"S",ti:"Fanship and fandom: Comparisons between sport and non-sport fans",au:"Reysen S., Branscombe N. R., 2010",k:"量化·量表",u:"趣缘群体认同、兴趣对象热情两个量表的来源",
+ q:"非体育类粉丝和体育迷的认同是否相似；对兴趣对象的认同和对粉丝群体的认同是否是两回事。",
+ th:"社会认同理论。",
+ m:"四项问卷研究，比较体育与非体育兴趣的粉丝。",
+ f:"区分了fanship（对兴趣对象本身的认同）与fandom（对其他粉丝组成的群体的认同），两者正相关但彼此独立。",
+ l:"样本以美国大学生为主；量表为英文，用在中国同人圈要做翻译回译和情境改编；fandom量表的“其他粉丝”指谁，需要你用访谈来确定。",
+ h:"第五章两个变量的测量来源都写它。这是你把“喜欢作品”和“认同同好”分开的依据，答辩被问“是不是本来就喜欢这个圈子”时，要能说出这篇文章的区分。把原始题项抄进测量对照表。",
+ e:"Reysen与Branscombe区分了对兴趣对象本身的认同和对同好群体的认同，二者相关但彼此独立[58]。本研究以前者作为控制变量，以后者测量趣缘群体认同。",
+ r:"REYSEN S, BRANSCOMBE N R. Fanship and fandom: Comparisons between sport and non-sport fans[J]. Journal of Sport Behavior, 2010, 33(2): 176-193.",c:"找到原始题项并记录题数和计分方式。"},
+
+{n:48,t:"A",ti:"社群互动仪式、情感能量和粉丝忠诚",au:"薛海波，2021",k:"量化·PLS-SEM",u:"最接近你的量化先例；情感能量测量",
+ q:"品牌社群中的互动仪式如何经由情感能量与粉丝忠诚相关联。",
+ th:"互动仪式链理论。",
+ m:"先做粉丝访谈再设计问卷，用偏最小二乘结构方程模型分析。",
+ f:"社群互动仪式包含人际互动仪式与自我互动仪式两个维度，二者与粉丝忠诚正相关，情感能量起部分中介作用。",
+ l:"情感能量最终只保留两道题，内部一致性系数0.663，低于常用标准；未区分现场情绪与持久的情感能量；对象是品牌社群。",
+ h:"这是你“情感能量测量需要充实”的直接证据，也是答辩时说明“量化互动仪式链已有先例”的依据。第二章2.4、2.5，第五章情感能量量表编制都要引。还可以参考它的人际互动仪式题项来编仪式体验。",
+ e:"薛海波以品牌社群粉丝为对象的研究最终保留两道情感能量题项，内部一致性系数为0.663[48]，说明情感能量可以纳入问卷，题项的数量与指向仍有充实的余地。",
+ r:"薛海波. 社群互动仪式、情感能量和粉丝忠诚[J]. 华东师范大学学报(哲学社会科学版), 2021, 53(3): 134-145.",c:"抄下两道情感能量题和人际互动仪式题项。"},
+{n:52,t:"A",ti:"Psychosocial effects of perceived emotional synchrony in collective gatherings",au:"Páez D., Rimé B., Basabe N. 等, 2015",k:"量化·多研究",u:"H1；情感共享维度；集会后心理结果",
+ q:"参加集体聚会为什么会带来积极的心理结果。",
+ th:"涂尔干集体欢腾、互动仪式理论。",
+ m:"四项研究，对象包括民俗游行和抗议集会的参与者，含集会前后测量。",
+ f:"集会参与与集体认同、社会融入和积极情绪的提升相关，感知情绪同步在其中起中介作用。",
+ l:"测的是仪式过程中的情绪同步，不是仪式后留存的情感能量；集会类型与同人展差异较大。",
+ h:"H1推导的实证支撑，也是第二章2.5“第一种测量做法”的代表。注意用它说明“情绪共享可以测量、并与集会后心理结果相关”，不要说它测了情感能量。",
+ e:"Páez等对集会参与者的研究发现，参与者感知到的情绪同步越强，集会后的积极情绪与集体认同越高[52]。",
+ r:"PÁEZ D, RIMÉ B, BASABE N, et al. Psychosocial effects of perceived emotional synchrony in collective gatherings[J]. Journal of Personality and Social Psychology, 2015, 108(5): 711-729.",c:"确认结果变量的准确表述（集体认同/集体效能感/积极情绪），与指南示范段落统一。"},
+{n:53,t:"A",ti:"Perceived emotional synchrony in collective gatherings: Validation of a short scale",au:"Wlodarczyk A., Zumeta L., Pizarro J. J. 等, 2020",k:"量化·量表验证",u:"仪式体验中“情感共享”维度的题项来源",
+ q:"感知情绪同步量表的结构和效度是否可靠，能否缩短。",
+ th:"集体仪式与情绪同步研究。",
+ m:"多样本验证，检验结构效度与增量效度，提出简版量表。",
+ f:"感知情绪同步量表具有可接受的结构效度和增量效度，简版可用。",
+ l:"量表测的是仪式过程中的情感共享；原样本以西语国家集会为主，题项需中文改编。",
+ h:"第五章仪式体验测量。写清你只借用其中情感共享部分，其余三维另编。",
+ e:"情感共享维度参考Wlodarczyk等验证的感知情绪同步简版量表[53]，按同人展情境改编。",
+ r:"WLODARCZYK A, ZUMETA L, PIZARRO J J, et al. Perceived emotional synchrony in collective gatherings: Validation of a short scale and proposition of an integrative measure[J]. Frontiers in Psychology, 2020, 11: 1721.",c:"抄下简版题项与计分方式。"},
+{n:54,t:"A",ti:"Being there: Using combined experience data sources to capture tourist interactions",au:"Mitas O., Camp L., Raidt R. 等",k:"量化·生理测量",u:"情感能量“第二种测量做法”；说明即时唤醒≠情感能量",
+ q:"游客与居民的互动在当下引起了怎样的情绪反应，这些反应是否与情感团结、推荐意愿相关。",
+ th:"互动仪式链理论，把情感能量界定为即时唤醒。",
+ m:"115名游客与居民，结合皮肤电导、全景摄像和问卷。",
+ f:"互动引起个体更高的唤醒水平，但唤醒没有进一步关联情感团结和推荐意愿。",
+ l:"把情感能量等同于即时生理唤醒，捕捉不到可以延续的部分；样本小。",
+ h:"第二章2.5用来反衬你的做法：唤醒没有关联后续意愿，正说明需要测量展后留存的那一部分。",
+ e:"Mitas等以皮肤电导测量即时唤醒，发现唤醒并未进一步关联情感团结与推荐意愿[54]，把情感能量等同于即时唤醒，难以捕捉其可以延续的部分。",
+ r:"MITAS O, CAMP L, RAIDT R, et al. Being there: Using combined experience data sources to capture tourist interactions[M]//（书名、编者待核）. Maribor: University of Maribor Press, （年份待核）.",c:"书名、编者、年份、页码都缺，找不到就从正文中删去这条。"},
+{n:55,t:"A",ti:"Negative emotional energy: A theory of the “dark-side” of interaction ritual chains",au:"Boyns D., Luery S., 2015",k:"理论论文",u:"情感能量题项需允许低值；第七章讨论",
+ q:"失败或不顺利的互动仪式会带来什么。",
+ th:"互动仪式链理论的延伸。",
+ m:"理论论证。",
+ f:"失败的互动会产生负面情感能量，使个体退缩、回避后续互动。",
+ l:"纯理论，没有测量方案。",
+ h:"第二章2.5和第五章题项设计：解释为什么要加反向或低能量题。现有题项还没落实这一点（见问题4）。",
+ e:"Boyns与Luery指出，不顺利的互动会留下负面的情感能量，使个体回避后续互动[55]，因此题项需要允许受访者报告较低的情感能量。",
+ r:"BOYNS D, LUERY S. Negative emotional energy: A theory of the “dark-side” of interaction ritual chains[J]. Social Sciences, 2015, 4(1): 148-170.",c:"页码标黄，核对。"},
+{n:18,t:"A",ti:"Fandom in comic-con: Cosplay tourists' interaction and emotional solidarity",au:"Tang J., Song B., Wang Y., 2023",k:"量化·SEM",u:"最近邻研究；创新点对比；仪式体验题项参考",
+ q:"漫展上中国cosplay游客之间的互动与情感团结有何关系。",
+ th:"情感团结理论（旅游研究）。",
+ m:"问卷调查与结构方程模型。",
+ f:"同好之间的互动与情感团结显著相关，并与更好的参展体验相关。",
+ l:"核心概念是情感团结，旅游研究中多指游客与居民的情感联系，与情感能量不同；没有测量展后状态。",
+ h:"第二章2.1和研究述评、开题报告创新点都要和它对比：它说明漫展同好互动可以进模型，你的区别是关注仪式之后留存的情感能量。答辩时被问“有没有人做过”，先说这篇。",
+ e:"Tang等已检验中国漫展cosplay参与者之间的互动与情感团结的关系[18]，本研究关注的则是参与者在仪式之后留存的情感能量。",
+ r:"TANG J, SONG B, WANG Y. Fandom in comic-con: Cosplay tourists' interaction and emotional solidarity[J]. Journal of Hospitality and Tourism Management, 2023, 54: 346-356. DOI:10.1016/j.jhtm.2023.01.005.",c:"查看其互动量表题项能否用于仪式体验。"},
+{n:25,t:"A",ti:"漫展“魔都同人祭”互动机制研究——基于展会方与参展方互动的角度",au:"魏莱，2023（硕士学位论文）",k:"质性·个案",u:"最近邻研究；互动仪式链用于同人展",
+ q:"魔都同人祭中展会方与参展方的互动有什么特点和问题。",
+ th:"互动仪式链理论。",
+ m:"个案研究，以观察和访谈为主。",
+ f:"分析了展会互动的特点和现场出现的互动乱象。",
+ l:"从展会方视角出发，没有量化参与者个人的展后状态。",
+ h:"第二章2.2和2.4、研究述评、创新点。说明互动仪式链已被用于同一展会，你的推进在于从参与者个人出发做量化检验。和你用同一个案例展会，答辩老师可能读过。",
+ e:"魏莱以互动仪式链理论考察魔都同人祭中展会方与参展方的互动[25]，本研究则从参与者个人出发，以问卷数据检验现场经历与展后状态之间的关联。",
+ r:"魏莱. 漫展“魔都同人祭”互动机制研究——基于展会方与参展方互动的角度[D]. 上海: 上海大学, 2023.",c:"在知网学位论文库确认题名与学校。"},
+{n:50,t:"A",ti:"文旅“流量”如何变“留量”？基于过程视角的旅游者仪式感知及作用机制",au:"卢俊阳, 邓爱民, 韦俊峰 等, 2025",k:"研究构想",u:"思路最接近的国内文献；研究缺口",
+ q:"旅游者的仪式感知如何转化为留存意愿。",
+ th:"互动仪式链理论等。",
+ m:"研究构想（尚未实证），群体层面子研究以互动仪式链为依据。",
+ f:"设想情感能量与情感团结在仪式感知与游客留存意愿之间起传导作用。",
+ l:"尚待实证；对象是一般旅游者；结果变量中的情感团结不同于趣缘群体认同。",
+ h:"研究缺口与创新点：说明“仪式经由情感能量联系到持续参与”这一设想已被提出但未被检验，你的研究提供一次检验。不要写成“本研究首次”。",
+ e:"卢俊阳等提出仪式感知经由情感能量与情感团结关联游客留存意愿的研究构想[50]，这一设想尚待实证检验。",
+ r:"卢俊阳, 邓爱民, 韦俊峰, 等. 文旅“流量”如何变“留量”？基于过程视角的旅游者仪式感知及作用机制[J]. 心理科学进展, 2025, 33(12): 2054-2068.",c:""},
+{n:14,t:"A",ti:"Fandom identification and in-person activities as mediators of the association between cosplay and psychological well-being",au:"Leshner C. E., Reysen S., Plante C. N. 等, 2024",k:"量化·中介",u:"H2、H4；群体认同作中介的先例",
+ q:"cosplay为什么与心理幸福感相关。",
+ th:"社会认同理论。",
+ m:"动漫粉丝问卷，链式中介模型。",
+ f:"粉丝群体认同和线下活动参与在cosplay与心理幸福感之间起链式中介作用。",
+ l:"横截面数据；结果变量是幸福感而非参与意愿；cosplay只是参与方式之一。",
+ h:"第二章2.6“群体认同常处于中介位置”，第四章H2推导，第七章讨论里与你的结果对话。",
+ e:"Leshner等发现，粉丝群体认同与线下活动参与共同解释了cosplay与心理幸福感之间的关系[14]。",
+ r:"LESHNER C E, REYSEN S, PLANTE C N, et al. Fandom identification and in-person activities as mediators of the association between cosplay and psychological well-being[J]. Journal of Fandom Studies, 2024, 12(1): 59-76.",c:"页码标黄，核对。"},
+{n:15,t:"A",ti:"Epic adventures and emotional journeys: How participation in comic conventions and live action role plays is associated with psychosocial outcomes",au:"Hajek A., Zwar L., Gyasi R. M. 等, 2025",k:"量化·全国样本",u:"研究缺口一：心理结果的分歧；控制变量依据",
+ q:"参加漫展和真人角色扮演的人在心理社会结果上与一般人有何不同。",
+ th:"公共卫生视角，无特定传播理论。",
+ m:"德国约5000名成年人配额样本，横截面比较。",
+ f:"漫展参与者报告了更多抑郁焦虑症状、更高孤独感与感知社会隔离，幸福感无差异。",
+ l:"比较对象是一般人群，无法区分参展前已有的特征；未测展会经历本身。",
+ h:"选题背景研究缺口和综述分歧表。用它说明“参展前已有的特征要控制”，从而引出圈龄、参展次数和兴趣对象热情三个控制变量。",
+ e:"Hajek等基于德国全国样本发现，漫展参与者的孤独感和抑郁、焦虑症状更高[15]，这提示参与者在参展前已有的特征可能与参展经历交织在一起。",
+ r:"HAJEK A, ZWAR L, GYASI R M, et al. Epic adventures and emotional journeys: How participation in comic conventions and live action role plays is associated with psychosocial outcomes[J]. Journal of Public Health, 2025.",c:"卷期页码待定，查出版社页面；若仍为网络首发，按“[J/OL]”加DOI著录。"},
+{n:13,t:"A",ti:"“You had to be there”: Convention attendance and well-being in anime fans",au:"Ray A., Plante C. N., Reysen S. 等, 2018",k:"量化·比较",u:"研究缺口一：与[15]构成分歧",
+ q:"在展会现场作答的动漫粉丝和在线作答的粉丝，幸福感是否不同。",
+ th:"粉丝心理学研究。",
+ m:"比较展会现场样本与在线样本。",
+ f:"现场样本报告了更好的幸福感状况。",
+ l:"两类样本的来源不同，存在自选择；具体测量指标需看原文。",
+ h:"与[15]成对引用，构成“展会参与心理结果不一致”的分歧。综述括注要求你核实具体指标，开题前核完再删括注。",
+ e:"在动漫展现场作答的粉丝报告了更好的幸福感状况[13]，德国全国样本却发现漫展参与者孤独感更高[15]。",
+ r:"RAY A, PLANTE C N, REYSEN S, et al. “You had to be there”: Convention attendance and well-being in anime fans[J]. The Phoenix Papers, 2018, 3(2): 20-30.",c:"核实测量的是哪些幸福感指标、差异是否显著。"},
+{n:60,t:"A",ti:"Understanding information systems continuance: An expectation-confirmation model",au:"Bhattacherjee A., 2001",k:"量化·模型",u:"持续参与意愿的理论来源",
+ q:"用户初次使用后为什么会继续或停止使用一项信息系统。",
+ th:"期望确认理论。",
+ m:"在线银行用户问卷，结构方程模型。",
+ f:"期望确认与感知有用性关联满意度，满意度与持续使用意愿相关。",
+ l:"以理性评估为核心，没有情感与群体归属；对象是信息系统，题项需改编到展会情境。",
+ h:"第二章2.7交代“持续意愿”概念的来源，第五章说明以它为理论来源、以节事重游题项为测量来源。不要把它当作主要理论。",
+ e:"持续参与意愿的概念源于信息系统领域的期望确认模型[60]，本研究借用其持续意愿的界定，题项参照节事重游意愿研究改编。",
+ r:"BHATTACHERJEE A. Understanding information systems continuance: An expectation-confirmation model[J]. MIS Quarterly, 2001, 25(3): 351-370.",c:""},
+{n:63,t:"A",ti:"Examining the festival attributes that impact visitor experience, satisfaction and re-visit intention",au:"Cole S. T., Chancellor H. C., 2009",k:"量化·节事",u:"持续参与意愿题项来源",
+ q:"节庆的哪些属性与参与者体验、满意度和重游意愿相关。",
+ th:"节事体验与满意度研究。",
+ m:"节庆现场问卷，回归或结构模型。",
+ f:"节庆的项目、设施与娱乐等属性与体验相关，体验进一步与满意度和重游意愿相关。",
+ l:"情绪只作为现场体验，未涉及展后状态；对象为一般节庆。",
+ h:"第五章持续参与意愿的题项来源。拿到原始重游意愿题项，改成“未来12个月我打算继续参加同人展”这类表述。",
+ e:"持续参与意愿参考Cole与Chancellor[63]及Kim等[64]的重游意愿题项，改编为指向未来12个月参加同人展的意向。",
+ r:"COLE S T, CHANCELLOR H C. Examining the festival attributes that impact visitor experience, satisfaction and re-visit intention[J]. Journal of Vacation Marketing, 2009, 15(4): 323-333.",c:"确认原文中重游意愿的具体题项。"},
+{n:64,t:"A",ti:"An examination of festival attendees' behavior using SEM",au:"Kim Y. H., Kim M., Ruetzler T. 等, 2010",k:"量化·SEM",u:"持续参与意愿题项来源",
+ q:"小型节庆中感知价值、满意度与重游意愿的关系。",
+ th:"感知价值与满意度理论。",
+ m:"节庆参与者问卷，结构方程模型。",
+ f:"感知价值关联满意度，满意度与重游意愿相关。",
+ l:"小型节庆、样本有限；未涉及群体认同。",
+ h:"与[63]一起作为题项来源。",
+ e:"（与[63]合并引用）",
+ r:"KIM Y H, KIM M, RUETZLER T, et al. An examination of festival attendees' behavior using SEM[J]. International Journal of Event and Festival Management, 2010, 1(1): 86-95.",c:"页码标黄，核对；抄下重游意愿题项。"},
+{n:49,t:"A",ti:"From theatrical elements to festival attendees' perceived emotional synchrony",au:"Xie J., Li X., 2023",k:"量化·节事",u:"仪式体验题项参考；互动仪式链量化先例",
+ q:"节庆中的表演性元素如何与参与者的感知情绪同步相关。",
+ th:"互动仪式链理论。",
+ m:"节庆参与者问卷，结构方程模型。",
+ f:"节庆的表演性元素与参与者感知情绪同步相关。",
+ l:"停在情绪同步，没有延伸到仪式之后的状态。",
+ h:"第二章2.4量化应用；第五章编制仪式体验题项时查看其对仪式要素的测量。",
+ e:"Xie与Li检验了节庆中的表演性元素与参与者感知情绪同步之间的关系[49]。",
+ r:"XIE J, LI X. From theatrical elements to festival attendees' perceived emotional synchrony: The perspective of interaction ritual chain theory[J]. Journal of Hospitality and Tourism Management, 2023, 56: 83-93.",c:""},
+{n:17,t:"A",ti:"Pop culture, engagement and visitor profiles: The case of Comic Con - Porto 2024",au:"Lopes J., Borges A. P., Vieira E. 等, 2026",k:"量化·聚类",u:"H4；漫展访客忠诚",
+ q:"漫展访客可以分成哪些类型，哪些价值与访客忠诚相关。",
+ th:"消费价值与忠诚度研究。",
+ m:"现场问卷1686份，聚类分析与回归。",
+ f:"区分出重度粉丝、爱好者和休闲访客三类，重度粉丝占71.5%；情感价值与社会价值共同关联访客忠诚。",
+ l:"商业动漫展而非同人展；忠诚度与持续参与意愿概念不完全相同。",
+ h:"第四章H4推导（社会价值与再访相关），第二章2.7。",
+ e:"Lopes等在葡萄牙动漫展的研究发现，情感价值与社会价值共同关联访客忠诚[17]。",
+ r:"LOPES J, BORGES A P, VIEIRA E, et al. Pop culture, engagement and visitor profiles: The case of Comic Con - Porto 2024[J]. International Journal of Arts Management, 2026, 28(3): 35-51.",c:"2026年新刊，确认卷期页码已正式出版。"},
+{n:24,t:"A",ti:"动漫同人展关联行业的游客情感演变——以魔都同人祭为例",au:"许春晓, 施金碧, 2022",k:"量化·文本分析",u:"同一案例展会；现实背景与H3/H4",
+ q:"魔都同人祭游客的网络评论情感如何变化。",
+ th:"游客情感与体验研究。",
+ m:"抓取2014–2021年13届展会的网络评论，情感倾向分析。",
+ f:"好评主要围绕摄影、社交和内容三类需求，事件类差评更容易拉低整体情感倾向。",
+ l:"网络评论有自选择，不能反映个体展后状态；不涉及理论机制。",
+ h:"第一章研究情境、第二章2.2。说明社交需求是同人展体验的核心之一，同时是你选CP作为案例的已有研究基础。",
+ e:"许春晓与施金碧对魔都同人祭13届展会网络评论的分析发现，好评主要围绕摄影、社交和内容三类需求展开[24]。",
+ r:"许春晓, 施金碧. 动漫同人展关联行业的游客情感演变——以魔都同人祭（COMICUP）为例[J]. 城市学刊, 2022, 43(1): 35-43.",c:""},
+
+{n:4,t:"B",ti:"Textual poachers",au:"Jenkins H., 1992",k:"理论专著",u:"2.1 粉丝研究起点",q:"粉丝如何对待和使用媒介文本。",th:"参与式文化。",m:"文化研究、民族志。",f:"粉丝是主动挪用文本、再生产意义的读者，书写与交换构成文化实践。",l:"关注线上前的粉丝文本实践，不讨论线下聚集的心理结果。",h:"第二章2.1开头一两句。",e:"Jenkins把粉丝看作主动挪用文本、再生产意义的读者[4]。",r:"JENKINS H. Textual poachers: Television fans and participatory culture[M]. New York: Routledge, 1992.",c:""},
+{n:5,t:"B",ti:"Fan cultures",au:"Hills M., 2002",k:"理论专著",u:"2.1 情感投入",q:"粉丝身份中的情感与认同如何理解。",th:"精神分析、文化研究。",m:"理论分析。",f:"粉丝对作品的依恋不能只用理性的意义生产解释。",l:"理论性强，不直接支撑变量。",h:"第二章2.1，紧接[4]。",e:"Hills提醒研究者关注粉丝身份中的情感投入与自我认同[5]。",r:"HILLS M. Fan cultures[M]. London: Routledge, 2002.",c:""},
+{n:6,t:"B",ti:"Productive fandom",au:"Lamerichs N., 2018",k:"民族志专著",u:"2.1 线下展会；背景学术脉络",q:"粉丝在数字社区、展会和城市空间中如何进行情感性的接受与生产。",th:"媒介民族志、互媒性。",m:"媒介民族志。",f:"把粉丝研究引向线下，专章讨论cosplay这一身体化的情感过程。",l:"质性描述，不检验变量关系。",h:"选题背景学术背景、第二章2.1。",e:"Lamerichs以媒介民族志方法考察了粉丝展会中的cosplay实践[6]。",r:"LAMERICHS N. Productive fandom: Intermediality and affective reception in fan cultures[M]. Amsterdam: Amsterdam University Press, 2018.",c:""},
+{n:7,t:"B",ti:"Stranger than fiction: Fan identity in cosplay",au:"Lamerichs N., 2011",k:"理论论文",u:"2.1",q:"cosplay中粉丝身份如何形成。",th:"巴特勒述行理论。",m:"理论与案例分析。",f:"扮演者在身体与服装、现实与虚构之间完成对叙事的个人演绎，并借此与社群保持联系。",l:"不涉及量化。",h:"第二章2.1，一句带过。",e:"",r:"LAMERICHS N. Stranger than fiction: Fan identity in cosplay[J]. Transformative Works and Cultures, 2011, 7. DOI:10.3983/twc.2011.0246.",c:""},
+{n:8,t:"B",ti:"“A Jedi like my father before me”: Social identity and the New York Comic Con",au:"Gunnels J., 2009",k:"质性·访谈",u:"2.1、2.6",q:"成年人为何在漫展上扮演角色。",th:"社会认同。",m:"2009年纽约漫展访谈。",f:"扮演出来的身份具有社交和群体性质。",l:"访谈样本有限。",h:"第二章2.1，可在2.6中再提一次作为社会认同用于漫展的早期例子。",e:"",r:"GUNNELS J. “A Jedi like my father before me”: Social identity and the New York Comic Con[J]. Transformative Works and Cultures, 2009, 3. DOI:10.3983/twc.2009.0161.",c:""},
+{n:9,t:"B",ti:"Theorizing comic cons",au:"Woo B., Johnson B., Beaty B. 等, 2020",k:"理论论文",u:"2.1 漫展作为文化场合",q:"漫展是怎样的文化活动。",th:"文化产业、粉丝研究。",m:"理论讨论。",f:"讨论漫展的组织形式、参与者与内容流通。",l:"北美商业漫展语境。",h:"第二章2.1，一句。",e:"",r:"WOO B, JOHNSON B, BEATY B, et al. Theorizing comic cons[J]. Journal of Fandom Studies, 2020, 8(1): 9-31.",c:"页码标黄，核对。"},
+{n:10,t:"B",ti:"“Cosplay”: Imaginative self and performing identity",au:"Rahman O., Liu W. S., Cheung B. H. M., 2012",k:"质性·准民族志",u:"2.1 质性经验",q:"香港cosplay群体的经验与意义。",th:"身份展演。",m:"准民族志。",f:"cosplay带来愉悦经历、值得记住的回忆与自我满足。",l:"质性、地区样本。",h:"第二章2.1。",e:"",r:"RAHMAN O, LIU W S, CHEUNG B H M. “Cosplay”: Imaginative self and performing identity[J]. Fashion Theory, 2012, 16(3): 317-341.",c:""},
+{n:11,t:"B",ti:"Construction of discursive fandom and structural fandom through ACG fan conventions in Malaysia",au:"Yamato E., 2018",k:"质性·观察+访谈",u:"2.1、2.6；持续参展者的共处感",q:"马来西亚动漫展如何建构粉丝身份。",th:"粉丝研究。",m:"四场展会参与式观察，访谈9位参展五年以上者。",f:"在学校被边缘化的参与者在展会上体会到与同好共处；对持续参展者而言展会不只是短暂的仪式空间。",l:"样本小。",h:"背景与第二章2.1；“持续参展者”的发现可以在第七章讨论里与你的结果对话。",e:"Yamato访谈的马来西亚参与者在展会上获得了在学校里缺少的共处感[11]。",r:"YAMATO E. Construction of discursive fandom and structural fandom through anime comics and game fan conventions in Malaysia[J]. European Journal of Cultural Studies, 2018, 21(4): 469-485. DOI:10.1177/1367549416682964.",c:""},
+{n:12,t:"B",ti:"Comic Con communion: Gender, cosplay, and media fandom",au:"Dunn R. A., Herrmann A. F., 2020",k:"量化·问卷",u:"2.1",q:"cosplay参与者与非cosplay参与者的粉丝身份有何不同。",th:"粉丝认同。",m:"两场展会227名参与者问卷。",f:"cosplay参与者更倾向于把粉丝身份与朋友、与更大群体的分享联系起来。",l:"样本量小。",h:"第二章2.1。",e:"",r:"DUNN R A, HERRMANN A F. Comic Con communion: Gender, cosplay, and media fandom[M]//（编者）. Multidisciplinary perspectives on media fandom. Hershey: IGI Global, 2020. DOI:10.4018/978-1-7998-3323-9.ch003.",c:"补书的编者和页码。"},
+{n:16,t:"B",ti:"The impact of popular culture fandom on the quality of life of visitors to Comic Con Africa 2019",au:"Venter D., Erasmus T., 2021",k:"量化·节事",u:"2.1 旅游节事视角",q:"漫展出行动机与生活质量的关系。",th:"生活领域理论。",m:"现场433份问卷。",f:"检验了出行动机、生活领域与生活质量的关系。",l:"结果变量为生活质量。",h:"第二章2.1，一句。",e:"",r:"VENTER D, ERASMUS T. The impact of popular culture fandom on the quality of life of visitors to Comic Con Africa 2019[J]. African Journal of Hospitality, Tourism and Leisure, 2021, 10(3): 1064-1076.",c:""},
+{n:19,t:"B",ti:"Narrating absence: Fan con events and the commodification of leisure",au:"Lamond I., 2020",k:"批判理论",u:"2.1 批判视角；第七章局限",q:"大型粉丝展会中休闲如何被商品化。",th:"批判休闲研究。",m:"理论/叙事分析。",f:"展会是被组织和管理的空间，粉丝休闲受到商品化影响。",l:"不提供实证。",h:"第二章2.1；第七章讨论实践启示时可提醒主办方商业化的边界。",e:"",r:"LAMOND I. Narrating absence: Fan con events and the commodification of leisure[J]. Journal of Fandom Studies, 2020, 8(1): 33-46.",c:"页码标黄，核对。"},
+{n:20,t:"B",ti:"Anime convention attendance in response to Covid-19",au:"Alberto M., Tringali B., 2022",k:"量化·问卷",u:"2.1",q:"疫情停展期间参与者的感受与参与方式。",th:"—",m:"一千一百余份问卷。",f:"记录了停办期间参与者的感受与参与方式。",l:"特殊时期。",h:"第二章2.1，一句，可删。",e:"",r:"ALBERTO M, TRINGALI B. Anime convention attendance in response to Covid-19[J]. Journal of Anime and Manga Studies, 2022, 3. DOI:10.21900/j.jams.v3.986.",c:""},
+{n:21,t:"B",ti:"动漫同人展及其商业化运作可能性探析",au:"张放, 甘浩辰, 2012",k:"介绍性研究",u:"1.5 同人展界定；选题背景",q:"同人展是什么，能否商业化运作。",th:"—",m:"文献与现象梳理。",f:"同人展以交流为基本目的、由民间自发组织，区别于官方举办、企业赞助的动漫展。",l:"年代较早，描述性。",h:"第一章核心概念界定“同人展”的定义来源，开题报告背景已经引用。",e:"张放与甘浩辰指出，同人展以同好交流为基本目的，由民间自发组织[21]。",r:"张放, 甘浩辰. 动漫同人展及其商业化运作可能性探析[J]. 国际新闻界, 2012, 34(8): 84-89.",c:""},
+{n:27,t:"B",ti:"从杭州动漫同人展看角色扮演者的文化诉求",au:"龙卓玥, 樊华, 2025",k:"质性·个案",u:"2.2、2.6 认可与认同",q:"同人展扮演者有哪些文化诉求。",th:"—",m:"个案考察。",f:"扮演者通过与同好拍照、交谈获得他人对自己还原角色的认可。",l:"篇幅短、描述性。",h:"第二章2.2和2.6，一句。",e:"",r:"龙卓玥, 樊华. 从杭州动漫同人展看角色扮演者的文化诉求[J]. 美与时代（上）, 2025(2): 59-61.",c:"刊名和页码标黄，核对。"},
+{n:28,t:"B",ti:"Fandom under the state: Using ZMET to explore comic conventions in China",au:"Wang Y., 2026",k:"质性·ZMET",u:"1.4 情境独特性；区分同人展与政府主导漫展",q:"中国粉丝如何看待政府主导型漫展。",th:"—",m:"隐喻引出技术（ZMET）。",f:"这类展会保留cosplay与摊位互动，同时被纳入文化政策框架。",l:"对象为政府主导型展会。",h:"第一章1.4论证为什么研究同人展而非一般漫展。",e:"",r:"WANG Y. Fandom under the state: Using ZMET to explore comic conventions in China[J]. Emerging Media, 2026, 4(1): 51-70. DOI:10.1177/27523543261426630.",c:"2026年新刊，页码标黄，核对。"},
+{n:29,t:"B",ti:"网络虚拟社区中的趣缘文化传播",au:"蔡骐, 2014",k:"理论论文",u:"1.5 趣缘群体界定；2.2",q:"网络趣缘群体如何形成和传播。",th:"传播学、亚文化研究。",m:"理论分析。",f:"共同兴趣使分散个体聚合为群体，成员在持续交流中形成共享话语与规范。",l:"线上为主。",h:"第一章“趣缘群体”定义的主要来源。",e:"",r:"蔡骐. 网络虚拟社区中的趣缘文化传播[J]. 新闻与传播研究, 2014(9): 5-23.",c:""},
+{n:30,t:"B",ti:"玩四驱：网络趣缘群体如何以物追忆",au:"孙信茹, 王东林, 2019",k:"质性·民族志",u:"2.2 物与群体记忆",q:"趣缘群体如何借助实物追忆和交流。",th:"媒介人类学、记忆研究。",m:"QQ群民族志。",f:"物品在群体记忆的维系中承担具体作用。",l:"对象不同。",h:"第二章2.2，联系徽章、痛包、同人本。",e:"",r:"孙信茹, 王东林. 玩四驱：网络趣缘群体如何以物追忆——对一个迷你四驱车QQ群的民族志考察[J]. 新闻与传播研究, 2019(1): 24-45.",c:""},
+{n:31,t:"B",ti:"台词编码与舞台适应：粉圈用语意义生产的拟剧社交展演",au:"张维胜, 江澜, 王炎龙, 2023",k:"质性",u:"2.2 圈内用语与局外人界限",q:"粉圈用语如何生产意义。",th:"拟剧理论。",m:"文本与网络观察。",f:"面向圈外多用易懂表情符号，面向圈内依托约定文字符号表意。",l:"线上为主。",h:"仪式体验“局外人界限”维度的依据之一，第二章2.2。",e:"",r:"张维胜, 江澜, 王炎龙. 台词编码与舞台适应：粉圈用语意义生产的拟剧社交展演[J]. 湖南科技大学学报(社会科学版), 2023, 26(4): 164-170.",c:""},
+{n:32,t:"B",ti:"异托邦视域下CP社群的运行逻辑研究",au:"刘诣, 2023",k:"质性·网络民族志",u:"2.2、2.6",q:"CP社群如何运行。",th:"福柯异托邦。",m:"8个CP社群多年网络民族志。",f:"CP粉通过共同情感投入和意义生产形成群体共情。",l:"线上。",h:"第二章2.2、2.6。",e:"",r:"刘诣. 异托邦视域下CP社群的运行逻辑研究[J]. 中国青年研究, 2023(1): 87-95.",c:"页码标黄，核对。"},
+{n:33,t:"B",ti:"COSPLAY，戏剧化的青春",au:"马中红, 2012",k:"专著",u:"2.2",q:"国内cosplay群体的文化面貌。",th:"青年亚文化研究。",m:"调查与文化分析。",f:"较早系统讨论国内cosplay群体。",l:"年代较早。",h:"第二章2.2，一句。",e:"",r:"马中红. COSPLAY，戏剧化的青春[M]. 苏州: 苏州大学出版社, 2012.",c:""},
+{n:34,t:"B",ti:"从消费到共构：二次元青年角色产消合一实践转向研究",au:"王璐远, 张军, 2026",k:"质性·访谈",u:"2.2",q:"二次元青年围绕角色的实践如何变化。",th:"数据库消费理论。",m:"访谈15名二次元青年。",f:"实践从单纯消费变为消费与创作并存。",l:"样本小。",h:"第二章2.2，说明同人展以创作与交换为核心。",e:"",r:"王璐远, 张军. 从消费到共构：二次元青年角色产消合一实践转向研究——基于数据库消费理论分析[J]. 北京青年研究, 2026, 35(1): 43-54.",c:"2026年新刊，确认信息。"},
+{n:36,t:"B",ti:"媒介仪式与阈限经验：虚拟主播观众社群的互动实践及其制度化",au:"赵瑜, 段家欣, 2024",k:"质性",u:"2.3 仪式观的国内应用",q:"虚拟主播观众社群的仪式性互动。",th:"媒介仪式、阈限。",m:"网络观察与访谈。",f:"分析直播间中的仪式性互动及其制度化。",l:"线上。",h:"第二章2.3，一句。",e:"",r:"赵瑜, 段家欣. 媒介仪式与阈限经验：虚拟主播观众社群的互动实践及其制度化[J]. 西南民族大学学报(人文社会科学版), 2024, 45(2): 116-125.",c:"刊名卷号标黄，核对。"},
+{n:37,t:"B",ti:"动员“情感”：演唱会现场的应援棒实践与对物的反思",au:"黄华, 吴越, 2022",k:"质性",u:"2.3 线下现场与物",q:"应援棒如何组织演唱会现场的情感。",th:"物质性、情感研究。",m:"现场观察与访谈。",f:"应援棒在调动和组织在场粉丝情感中发挥实际作用。",l:"演唱会情境。",h:"第二章2.3；也可在第一章1.4对比音乐现场与同人展。",e:"",r:"黄华, 吴越. 动员“情感”：演唱会现场的应援棒实践与对物的反思[J]. 国际新闻界, 2022, 44(7): 135-155.",c:"页码标黄，核对。"},
+{n:39,t:"B",ti:"Interaction ritual theory and sports fans",au:"Cottingham M. D., 2012",k:"质性",u:"2.4 互动仪式链用于体育迷",q:"球迷群体中的情感、符号与团结如何形成。",th:"互动仪式链。",m:"参与式观察与新闻内容分析。",f:"呈现了钢人队球迷的集体欢腾、情感能量、群体符号与团结。",l:"质性。",h:"第二章2.4。",e:"",r:"COTTINGHAM M D. Interaction ritual theory and sports fans: Emotion, symbols, and solidarity[J]. Sociology of Sport Journal, 2012, 29(2): 168-185.",c:""},
+{n:40,t:"B",ti:"The roar of the crowd: How interaction ritual chains create social atmospheres",au:"Hill T., Canniford R., Eckhardt G. M., 2022",k:"质性·民族志",u:"2.4",q:"现场气氛如何在互动仪式中形成。",th:"互动仪式链。",m:"英超球场民族志。",f:"提出现场气氛形成的四个阶段。",l:"质性。",h:"第二章2.4。",e:"",r:"HILL T, CANNIFORD R, ECKHARDT G M. The roar of the crowd: How interaction ritual chains create social atmospheres[J]. Journal of Marketing, 2022, 86(3): 121-139.",c:"页码标黄，核对。"},
+{n:41,t:"B",ti:"（题名待核）2012年欧洲杯期间仪式参与与国家认同",au:"von Scheve C., Ismer S. 等, 2017",k:"准实验",u:"2.4",q:"国际赛事中的仪式参与是否与国家认同相关。",th:"互动仪式、集体情绪。",m:"自然情境准实验。",f:"检验了仪式参与与国家认同的关系。",l:"—",h:"第二章2.4。题名补不上就删。",e:"",r:"VON SCHEVE C, ISMER S, et al. （题名待核）[J]. Comparative Sociology, 2017, 16: 585-612.",c:"题名缺失，在Comparative Sociology 2017年第16卷检索作者补全。"},
+{n:42,t:"B",ti:"Memorable tourism experiences and their consequences: An interaction ritual (IR) theory approach",au:"Sterchele D., 2020",k:"质性·纵向",u:"2.4 链的经验证据；第七章讨论",q:"难忘的节庆体验如何延续。",th:"互动仪式链。",m:"多元文化节庆纵向质性研究。",f:"返乡参与者把节庆活动形式带回社区重复举办，情感体验跨越时间地点延续。",l:"质性，不能检验强度。",h:"第二章2.4说明“链”有经验证据；第七章讨论情感能量的延续。",e:"Sterchele的纵向研究发现，参与者把节庆的活动形式带回自己的社区重复举办[42]，为互动仪式“成链”提供了经验证据。",r:"STERCHELE D. Memorable tourism experiences and their consequences: An interaction ritual (IR) theory approach[J]. Annals of Tourism Research, 2020, 81: 102847.",c:""},
+{n:43,t:"B",ti:"虚拟在场：网络粉丝社群的互动仪式链",au:"潘曙雅, 张煜祺, 2014",k:"质性",u:"2.4 国内传播学应用起点",q:"线上粉丝社群如何形成互动仪式。",th:"互动仪式链。",m:"网络观察。",f:"线上互动可形成虚拟在场，同步观看与实时讨论形成共同关注与情绪共享。",l:"线上。",h:"第二章2.4，并说明你为什么在线下改测“感知共在”。",e:"",r:"潘曙雅, 张煜祺. 虚拟在场：网络粉丝社群的互动仪式链[J]. 国际新闻界, 2014, 36(9): 35-46.",c:""},
+{n:57,t:"B",ti:"Sports fans: Measuring degree of identification with their team",au:"Wann D. L., Branscombe N. R., 1993",k:"量表",u:"2.6 粉丝认同测量起点",q:"如何测量球迷认同。",th:"社会认同。",m:"量表编制。",f:"观众认同量表。",l:"只针对球队。",h:"第二章2.6，引出[58]。",e:"",r:"WANN D L, BRANSCOMBE N R. Sports fans: Measuring degree of identification with their team[J]. International Journal of Sport Psychology, 1993, 24(1): 1-17.",c:""},
+{n:59,t:"B",ti:"Group-level self-definition and self-investment",au:"Leach C. W., van Zomeren M., Zebel S. 等, 2008",k:"量表",u:"趣缘群体认同题项补充",q:"群体认同由哪些成分构成。",th:"社会认同。",m:"多研究量表开发。",f:"认同分为自我界定与自我投入等层级成分。",l:"题项较多，需取舍。",h:"第五章趣缘群体认同改编时的补充参考。",e:"",r:"LEACH C W, VAN ZOMEREN M, ZEBEL S, et al. Group-level self-definition and self-investment: A hierarchical (multicomponent) model of in-group identification[J]. Journal of Personality and Social Psychology, 2008, 95(1): 144-165.",c:""},
+{n:61,t:"B",ti:"Segmentation of festival motivation by nationality and satisfaction",au:"Lee C. K., Lee Y. K., Wicks B. E., 2004",k:"量化",u:"2.7",q:"不同节庆动机群体的满意度差异。",th:"动机理论。",m:"问卷、聚类。",f:"细分了节庆动机。",l:"不涉及情感能量。",h:"第二章2.7，一句；也可支撑“参与动机只在访谈中描述”。",e:"",r:"LEE C K, LEE Y K, WICKS B E. Segmentation of festival motivation by nationality and satisfaction[J]. Tourism Management, 2004, 25(1): 61-70.",c:""},
+{n:62,t:"B",ti:"Festivalscapes and patrons' emotions, satisfaction, and loyalty",au:"Lee Y. K., Lee C. K., Lee S. K. 等, 2008",k:"量化·SEM",u:"2.7；现场即时情绪的参照",q:"节庆环境与服务如何经由情绪关联满意度和忠诚。",th:"环境心理学（S-O-R）。",m:"问卷、结构方程模型。",f:"节庆场景经由参与者情绪与满意度、忠诚度相关联。",l:"情绪是现场即时情绪。",h:"第二章2.7，并可作为“现场即时情绪”题项的参考来源。",e:"",r:"LEE Y K, LEE C K, LEE S K, et al. Festivalscapes and patrons' emotions, satisfaction, and loyalty[J]. Journal of Business Research, 2008, 61(1): 56-64.",c:""},
+{n:65,t:"B",ti:"Investigating factors affecting fans' intention to attend anime events",au:"Jabar M. A., Hamid S. S. A., 2024",k:"概念框架",u:"2.7",q:"哪些因素影响粉丝参加动漫活动的意愿。",th:"—",m:"概念框架，无实证。",f:"提出活动形象、出行动机与媒体信息共同作用的框架。",l:"未检验。",h:"第二章2.7，一句。",e:"",r:"JABAR M A, HAMID S S A. Investigating factors affecting fans' intention to attend anime events: Conceptual[J]. Information Management and Business Review, 2024, 16(1): 43-50.",c:""},
+
+{n:1,t:"C",ti:"界面新闻：CP30相关报道",au:"界面新闻, 2025",k:"新闻",u:"选题背景数据",h:"只用于现实背景的一个数字（CP30四天约25万人次）。",r:"界面新闻. （题名待核）[EB/OL]. (2025)[2026-10-11]. https://www.jiemian.com/article/12816069.html.",c:"打开链接补题名、作者和发布日期。"},
+{n:2,t:"C",ti:"门票秒光，全国超400场！各地争抢二次元",au:"中新经纬, 2025",k:"新闻",u:"选题背景数据",h:"2025年中秋国庆至少413场漫展。",r:"中新经纬. 门票秒光，全国超400场！各地争抢二次元[EB/OL]. (2025-10-05)[2026-10-11]. （原发链接待补）.",c:"现用扬子晚报转载页，换成中新经纬原发链接。"},
+{n:3,t:"C",ti:"面对面确认同好——CP展热潮中的青少年情感共同体",au:"周璐瑶, 2026",k:"报纸",u:"选题背景；CP32同人礼仪答题",h:"背景中一句话；题目里的“青少年”提醒你注意未成年参与者的伦理问题。",r:"周璐瑶. 面对面确认同好——CP展热潮中的青少年情感共同体[N]. 文艺报, 2026-06-10.",c:"核对版次，GB/T 7714报纸文献要写版次，如“(3)”。"},
+{n:22,t:"C",ti:"中国同人发展现状及期待",au:"陈悦帆",k:"介绍性",u:"2.2",h:"一句带过，信息补不全就删。",r:"陈悦帆. 中国同人发展现状及期待[J]. （刊名、年份、页码待核）.",c:"刊名、年份、页码均缺。"},
+{n:23,t:"C",ti:"论网络科技对我国当代同人文化的构建与规制",au:"杨学军, 李雨晨, 2015",k:"理论",u:"2.2",h:"一句带过。",r:"杨学军, 李雨晨. 论网络科技对我国当代同人文化的构建与规制[J]. 河南社会科学, 2015, 23(7): 105-112.",c:""},
+{n:26,t:"C",ti:"异托邦视阈下动漫同人展空间媒介的建构",au:"王淑晨, 2025（学位论文）",k:"质性",u:"2.2",h:"综述括注说该文为扫描版、论点待补。精读不了就只写一句它的视角，或删去。",r:"王淑晨. 异托邦视阈下动漫同人展空间媒介的建构[D]. 济南: 山东大学, 2025.",c:"精读后补充论点。"},
+{n:44,t:"C",ti:"互动仪式链理论范式下官员直播带货现象分析",au:"强月新, 孙志鹏, 2020",k:"质性",u:"2.4 线上应用（弱相关）",h:"与主题距离远，建议换成弹幕或粉丝直播的互动仪式链研究（问题10）。",r:"强月新, 孙志鹏. 互动仪式链理论范式下官员直播带货现象分析[J]. 编辑之友, 2020(10): 21-26.",c:""},
+{n:45,t:"C",ti:"互动仪式链下球迷社群的情感符号分析",au:"徐旭初, 韩昊峰, 2023",k:"质性",u:"2.4",h:"一句带过。",r:"徐旭初, 韩昊峰. 互动仪式链下球迷社群的情感符号分析[J]. 杭州电子科技大学学报(社会科学版), 2023, 19(5): 62-68.",c:""},
+{n:46,t:"C",ti:"在酒吧讨论学术：互动仪式链视域下青年参与学术酒吧现象研究",au:"覃鑫渊, 2025",k:"质性",u:"2.4 线下回归",h:"一句带过；可用于说明青年回归身体在场的趋势。",r:"覃鑫渊. 在酒吧讨论学术：互动仪式链视域下青年参与学术酒吧现象研究[J]. 青年发展论坛, 2025, 35(5): 5-13.",c:""},
+{n:47,t:"C",ti:"互动仪式链理论及其在信息系统研究领域的应用与展望",au:"姜佩昕, 袁勤俭, 2024",k:"综述",u:"2.4",h:"可用来说明这一理论已有量化应用的综述，一句。",r:"姜佩昕, 袁勤俭. 互动仪式链理论及其在信息系统研究领域的应用与展望[J]. 现代情报, 2024, 44(7): 170-177.",c:"卷号标黄，核对。"}
+];
+const TIERS={S:["S 理论基石","全文的理论来源和两个量表的出处。必须读原著，引用定义要记页码。"],A:["A 核心实证与测量","支撑假设推导、提供量表、界定研究缺口。答辩追问集中在这一级。"],B:["B 脉络支撑","用于第二章梳理研究脉络，每篇一两句即可，读摘要和结论部分。"],C:["C 背景与边缘","新闻数据与弱相关文献。核实信息，补不全的考虑删去。"]};
+let curTier='all',kw='';
+const copyTxt=(btn,txt)=>{const done=()=>{btn.textContent='已复制';setTimeout(()=>btn.textContent='复制',1500)};
+ if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(done,()=>sel(btn))}else sel(btn)};
+function sel(btn){const s=btn.previousElementSibling;const r=document.createRange();r.selectNodeContents(s);const w=getSelection();w.removeAllRanges();w.addRange(r);btn.textContent='已选中';}
+function card(x){
+ const tags='<span class="pill p-'+x.t+'">'+x.t+'</span><span class="pill p-C">'+esc(x.k)+'</span>'+(x.c?'<span class="pill p-warn">需核</span>':'');
+ const F=(lab,v,cls)=>v?'<div class="f'+(cls?' '+cls:'')+'"><b>'+lab+'</b>'+esc(v)+'</div>':'';
+ let body='';
+ if(x.q)body+=F('研究问题',x.q)+F('理论',x.th)+F('方法',x.m)+F('结论',x.f)+F('局限与不足',x.l,'lim');
+ body+='<div class="f w how"><b>你怎么用</b>'+esc(x.h)+(x.e&&x.e.length>12?'<div class="ex">示范：'+esc(x.e)+'</div>':'')+'</div>';
+ if(x.c)body+='<div class="f w chk"><b style="color:var(--warn)">需要核对</b>'+esc(x.c)+'</div>';
+ body+='<div class="f w"><b>参考文献著录</b><div class="gbt"><span>['+x.n+'] '+esc(x.r)+'</span><button class="copy" type="button">复制</button></div></div>';
+ return '<details class="ref" data-n="'+x.n+'"><summary><span class="rn">['+x.n+']</span><span class="rt"><b>'+esc(x.ti)+'</b><span class="au">'+esc(x.au)+'</span><span class="use">用途：'+esc(x.u)+'</span></span><span class="rtags">'+tags+'</span></summary><div class="rbody">'+body+'</div></details>';
+}
+function renderLit(){
+ const box=document.getElementById('litlist');let html='';
+ ['S','A','B','C'].forEach(t=>{
+  if(curTier!=='all'&&curTier!=='chk'&&curTier!==t)return;
+  const items=L.filter(x=>x.t===t&&(curTier!=='chk'||x.c)&&(!kw||JSON.stringify(x).toLowerCase().includes(kw)));
+  if(!items.length)return;
+  html+='<div class="tierhead"><h3>'+TIERS[t][0]+' <span class="mono note">'+items.length+'篇</span></h3><p>'+TIERS[t][1]+'</p></div>'+items.map(card).join('');
+ });
+ box.innerHTML=html||'<p class="empty">没有符合条件的文献，换个关键词试试。</p>';
+ box.querySelectorAll('.copy').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();copyTxt(b,b.previousElementSibling.textContent)}));
+}
+document.querySelectorAll('.chip').forEach(c=>c.addEventListener('click',()=>{document.querySelectorAll('.chip').forEach(o=>o.setAttribute('aria-pressed','false'));c.setAttribute('aria-pressed','true');curTier=c.dataset.tier;renderLit()}));
+document.getElementById('q').addEventListener('input',e=>{kw=e.target.value.trim().toLowerCase();renderLit()});
+renderLit();
+
+/* ========== PPT 与追问 ========== */
+const PPT=[
+ ["1","题目与汇报结构","题目、姓名、导师；一句话说明今天讲五部分。"],
+ ["2","研究现象","CP30约25万人次、2025年国庆至少413场漫展；同人展以同好创作和交换为核心；提出“展会结束后留下了什么”。"],
+ ["3","研究缺口","心理结果的分歧（[13] vs [15]）；情感能量测量的三种做法都没对准展后留存的部分（[52][54][48]）。"],
+ ["4","研究问题","RQ1访谈、RQ2问卷核心、RQ3探索，每个问题对应的方法。"],
+ ["5","理论框架","三层：凯瑞仪式观（立场）、柯林斯互动仪式链（核心）、社会认同理论（辅助）；各自回答什么。"],
+ ["6","研究模型与假设","模型图，H1–H6，保留直接关系；说清时间指向。"],
+ ["7","情感能量怎么测","操作性定义、与相邻变量的边界、题项示例、两个替代解释的控制。全场重点，可以多讲半分钟。"],
+ ["8","其他变量与量表来源","变量表压缩版，标出来源文献编号。"],
+ ["9","研究设计","访谈→预调查→正式调查三阶段，样本量和产出；CP33与备选方案。"],
+ ["10","分析计划","CFA、SEM、Bootstrap 5000次；补充分析的开展条件。"],
+ ["11","预期贡献与创新","概念区分、情境具体化；说清与Tang等[18]、魏莱[25]、卢俊阳等[50]的区别。"],
+ ["12","工作计划与可能的困难","时间表；困难：展会日期、样本获取、自编量表信效度，以及对应办法。"]
+];
+document.getElementById('pptrows').innerHTML=PPT.map(r=>'<tr><td class="n">'+r[0]+'</td><td><b>'+esc(r[1])+'</b></td><td>'+esc(r[2])+'</td></tr>').join('');
+const QA=[
+ ["你测到的真是情感能量，还是只是心情好？","题项指向展后日常的同好交往，题干里不出现展会；问卷单独测了现场即时情绪并加以控制；正式调查用HTMT检验区分效度。"],
+ ["会不会只是本来就很喜欢这个圈子或作品？","依据Reysen与Branscombe[58]，把对作品的认同（兴趣对象热情）和对同好的认同分开测量，前者作为控制变量。"],
+ ["一次问卷怎么能说明先后顺序？","不能说明因果。题目的时间指向只是让模型方向与事情发生的顺序一致，结论全部表述为关联；局限中说明未来可做追踪调查。"],
+ ["这和传播学有什么关系？","凯瑞的仪式观：同人展是参与者相互确认同属一群的传播场合；互动仪式链把这一立场落到个体层面。"],
+ ["为什么是同人展，换成音乐节不行吗？","同人展围绕作品与角色形成共同关注，徽章、痛包、同人本让同好容易彼此识别，线上关系在现场延续；这些特征会用访谈材料来证明。"],
+ ["情感能量量表是你自编的，可靠吗？","说明五步程序：原著定义、访谈生成8–10题、专家评议、预调查EFA和信度、正式调查CFA；薛海波[48]只有两题且信度0.663，正是需要自编的原因。"],
+ ["为什么加H4，认同到意愿这条路径的依据是什么？","社会认同理论认为认同某一群体的人倾向参与能确认这一身份的活动[56]；H6的连续中介也需要这条路径。"],
+ ["CP33还没定日期，调查怎么保证？","说明展会选择标准和备选方案；预调查可在CP33前的中小型同人展后进行。"],
+ ["同人展里很多是未成年人，怎么处理？","问卷设置年龄筛查，只保留18岁及以上的样本；访谈对象同样限定成年人；局限中说明样本偏向。"],
+ ["访谈只有十几个人能说明什么？","访谈用来发现情境特征和修订题项，不做统计推断，以信息饱和为准。"]
+];
+document.getElementById('qalist').innerHTML=QA.map(q=>'<div class="qa"><b>'+esc(q[0])+'</b><p>'+esc(q[1])+'</p></div>').join('');
+
+/* ========== 大纲 ========== */
+const CH=[
+ {t:"第一章 绪论",w:"约5000字",s:[["1.1","研究背景","现实、学术、缺口三层，各约600/600/400字；结尾引出研究问题"],["1.2","研究问题","RQ1–RQ3，每个问题后一句说明由什么方法回答"],["1.3","研究意义","理论意义三条在前，现实意义两条"],["1.4","研究情境的独特性","为什么是同人展：共同关注、随身物品带来的同好识别、线上关系的线下延续；注明有待访谈检验"],["1.5","核心概念界定","同人、同人展、趣缘群体，各一段并注出处"],["1.6","研究方法与技术路线","技术路线图一张，配一段说明"],["1.7","论文结构与创新点","每章一句话；创新点两条"]],r:"[1][2][3][13][15][21][24][28][29][35][38][48][50][52][54]"},
+ {t:"第二章 文献综述与理论基础",w:"约8000字",s:[["2.1","粉丝研究与线下展会研究","Jenkins、Hills到Lamerichs；国外漫展的质性与量化研究；结尾一句小结"],["2.2","国内同人展与趣缘群体研究","同人展的界定与个案研究；趣缘群体、圈内用语、物与记忆"],["2.3","传播的仪式观","凯瑞；国内媒介仪式研究两例"],["2.4","互动仪式链理论及其经验研究","四要素与四结果；体育迷、节庆、国内粉丝研究；量化先例。补写仪式要素的测量做法（问题6）"],["2.5","情感能量的概念与测量","三种测量做法及各自不足；负面情感能量"],["2.6","社会认同理论与粉丝群体认同","fanship与fandom之分；群体认同的中介位置"],["2.7","节事重游意愿与持续参与意愿","期望确认模型；节事重游研究；补一两篇中文文献"],["2.8","文献述评","共识、分歧（附表）、本文切入点，一页以内"]],r:"[4]–[65]"},
+ {t:"第三章 质性研究：同人展现场的互动与同好的边界",w:"约6000字",s:[["3.1","访谈设计与对象选择","目的性抽样标准、招募、时长；受访者信息表（匿名编号、圈龄、本次身份、参展次数）"],["3.2","资料整理与分析方法","转写、编码、主题归纳；如何处理与预期不一致的材料"],["3.3","参与动机与现场互动","回答RQ1，每个主题配一两段原话"],["3.4","受访者所说的同好指谁","决定趣缘群体认同题项的参照对象"],["3.5","对问卷设计的启示","哪些题项据访谈修订、为什么；这一节必须写"]],r:"[11][25][27][31][38][43][58]"},
+ {t:"第四章 研究模型与研究假设",w:"约4500字",s:[["4.1","研究模型","模型图与一段说明"],["4.2","仪式体验与情感能量（H1）","理论→实证→同人展情境→假设，四步"],["4.3","情感能量与趣缘群体认同（H2）","社会认同理论；承认二者可能互相影响"],["4.4","情感能量与持续参与意愿（H3）","柯林斯[38][51]、薛海波[48]"],["4.5","趣缘群体认同与持续参与意愿（H4）","社会认同理论[56]、Lopes等[17]；与H3分开推导"],["4.6","间接关联（H5、H6）","写清每条间接效应；保留直接关系"],["4.7","探索性问题","参与身份差异、距展会天数，为什么不设方向"],["4.8","模型方向与控制变量的依据","循环关系；控制变量连接表"]],r:"[14][17][38][48][51][52][56][58]"},
+ {t:"第五章 研究设计",w:"约4000字",s:[["5.1","变量的操作性定义与测量来源","每个变量一段；附测量对照表"],["5.2","情感能量量表的编制","五步程序与专家评议结果；含反向题的处理"],["5.3","问卷的时间指向结构","三种时间指向如何对应模型方向，不构成因果证据"],["5.4","参与身份分组规则","多重身份者归入主动参与角色组"],["5.5","预调查与题项修订","样本、EFA与信度、删改题项及理由"],["5.6","正式调查","展会选择标准、发放窗口、渠道、资格与年龄筛查、有效问卷标准、样本量论证"],["5.7","共同方法偏差与分析计划","程序控制为主；主方案与补充分析；软件"],["5.8","研究伦理","知情同意、成年人限定、匿名、数据保存"]],r:"[48][53][55][58][59][60][62][63][64]"},
+ {t:"第六章 数据分析与研究结果",w:"约6000字",s:[["6.1","样本描述","人口学、本次身份、圈龄与参展次数、渠道比较"],["6.2","数据质量","筛选结果、共同方法偏差诊断、共线性"],["6.3","测量模型","信度、收敛与区分效度；仪式体验一阶与高阶比较"],["6.4","结构模型与假设检验","拟合指标、标准化系数与置信区间、假设汇总表"],["6.5","间接效应","H5、H6的点估计与Bootstrap 95%置信区间"],["6.6","探索性分析","距展会天数；条件满足时的组间比较"]],r:"只报告结果，少引文献"},
+ {t:"第七章 结论与讨论",w:"约5000字",s:[["7.1","主要发现","按RQ1–RQ3逐一回答"],["7.2","理论讨论","控制替代解释后情感能量的独立作用；与Páez等、Leshner等对话；反向关系；用访谈解释量化结果"],["7.3","未获支持假设的解释","理论、测量、样本还是情境"],["7.4","实践启示","两三条，具体可行"],["7.5","局限与展望","单次测量、回忆偏差、意愿≠行为、样本来源；追踪调查与跨情境比较"]],r:"[11][14][15][35][38][42][52][55]"}
+];
+document.getElementById('chapters').innerHTML=CH.map(c=>'<article class="chap"><header><h3>'+esc(c.t)+'</h3><span class="mono">'+esc(c.w)+'</span></header><ol>'+c.s.map(s=>'<li><span class="sn">'+s[0]+'</span><span><b>'+esc(s[1])+'</b><small>'+esc(s[2])+'</small></span></li>').join('')+'</ol><p class="refs">主要引用：'+esc(c.r)+'</p></article>').join('');
+
+/* ========== 路线 ========== */
+const RD=[
+ ["10.11 – 10.27","开题","核文献、改报告、做PPT、答辩","开题报告书定稿；答辩PPT"],
+ ["10.28 – 11.08","按意见修改","整理答辩意见并逐条修改；完成测量对照表；查定CP33日期并确定主案例","修改说明；测量对照表"],
+ ["11.01 – 11.22","半结构访谈","招募15–20位成年受访者，边访边转写，做主题分析","访谈转写稿；编码表；第三章初稿提纲"],
+ ["11.15 – 11.29","问卷编制","情感能量8–10题初稿；仪式体验各维度题项；请2–3位老师或同门做内容效度评议","问卷初稿；专家评议记录"],
+ ["11月下旬 – 12月上旬","预调查","在一场中小型同人展后或同好群发放约100份；EFA与信度；修订问卷","正式问卷定稿"],
+ ["CP33结束后1–3周","正式调查","分两三批推送；每天记录各渠道回收量；目标有效样本300–350份","原始数据"],
+ ["2027.01","数据分析","清理数据；CFA；SEM；Bootstrap；补充分析","分析结果表"],
+ ["2027.01 – 02","同步写作","趁访谈记忆还新写完第三章；修订第一、二章","第一至三章修订稿"],
+ ["2027.02 – 03","主体写作","第四至六章；第七章初稿","全文初稿"],
+ ["2027.04","修改与预答辩","导师审阅、修改、预答辩","预答辩稿"],
+ ["2027.05","查重、定稿、答辩","按学院要求查重；终稿；正式答辩","学位论文终稿"]
+];
+document.getElementById('roadrows').innerHTML=RD.map(r=>'<tr><td class="n">'+esc(r[0])+'</td><td><b>'+esc(r[1])+'</b></td><td>'+esc(r[2])+'</td><td>'+esc(r[3])+'</td></tr>').join('');
+
+/* 目录高亮 */
+const links=[...document.querySelectorAll('nav.toc a')];
+const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){links.forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+e.target.id))}})},{rootMargin:'-30% 0px -60% 0px'});
+document.querySelectorAll('main section').forEach(s=>io.observe(s));
+})();
+</script>
