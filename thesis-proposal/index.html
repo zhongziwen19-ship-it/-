@@ -143,7 +143,8 @@ footer{padding-block:40px 60px;color:var(--muted);font-size:.85rem}
     <div class="eyebrow">新闻与传播 · 专业学位硕士 · 开题报告</div>
     <h1>同人漫展参与者的情感能量与持续参与意愿研究</h1>
     <div class="meta">
-      <span class="count">距 10月27日 开题提交与答辩 <b id="cd">5</b> 天</span>
+      <span class="count">距 10月25日 提交开题报告 <b id="cd1">3</b> 天</span>
+      <span class="count">距 10月27日 开题答辩 <b id="cd">5</b> 天</span>
       <span>60 篇文献（中文 36 · 英文 24）</span>
       <span>正式施测：CP33（12月26–27日）后两周内</span>
     </div>
@@ -272,7 +273,7 @@ footer{padding-block:40px 60px;color:var(--muted);font-size:.85rem}
 <section id="route">
   <div class="sec-head">
     <h2>写作路线</h2>
-    <p>今天是 10月22日，离 10月27日 提交和答辩还有五天。前五天只做一件事：让开题报告能过、答辩能答。文献不必全读完，A 级 20 篇读到能说出“它研究什么、怎么做、发现什么、我用它干什么”就够了。</p>
+    <p>10月25日（周日）提交开题报告，10月27日（周二）答辩。前三天只改报告，提交后的两天只准备答辩。导师留给你的修改时间很短，所以周六上午先把改好的稿子发给导师，周日根据意见定稿。文献不必全读完，A 级 20 篇读到能说出“它研究什么、怎么做、发现什么、我用它干什么”就够了；其中前 8 篇要在提交前读完，剩下 12 篇可以放到提交后、答辩前读。</p>
   </div>
   <div class="days" id="days"></div>
 
@@ -304,7 +305,7 @@ footer{padding-block:40px 60px;color:var(--muted);font-size:.85rem}
   </div>
   <div class="grid2">
     <div class="sheet">
-      <h3 style="margin-bottom:12px">开题报告（10月27日版）</h3>
+      <h3 style="margin-bottom:12px">开题报告（10月25日提交版）</h3>
       <ol class="outline">
         <li><b>选题背景</b>
           <ul><li>现实背景：泛二次元规模 [1]、漫展数量 [2]、CP32 客流与外地比例 [3]</li><li>同人展与商业漫展的区别 [4]；礼仪答题门槛 [5]</li><li>研究缺口：同人展场景的量化研究少；同人展被当作一般聚集场景（措辞见“问题与建议”第 6 条）</li></ul></li>
@@ -894,11 +895,11 @@ const MAP=[
 
 const DAYS=[
 ["10月22日","周四 · 今晚",["在本页读完 A 级前 8 篇卡片（柯林斯两篇、薛海波、Tang、魏莱、卢俊阳、Páez、Reysen）","在知网核对标黄的 [35][36][37]，补全 [21][53] 页码","按对照表统一开题正文的引用编号"]],
-["10月23日","周五",["修改“问题与建议”中所有「必须改」：H2、H4 依据，错别字，标题重复，术语统一","画模型图（图 1）放进研究模型一节","重写研究缺口那句话"]],
-["10月24日","周六",["读完 A 级剩余 12 篇卡片","研究方法补写：变量测量表、样本量与伦理、分析策略（CFA + PROCESS 模型号）","研究意义拆成理论与实践两段"]],
-["10月25日","周日",["通读全文，检查引用编号与参考文献表逐一对应","发给导师；同时开始做答辩 PPT（按右侧 10 页结构）"]],
-["10月26日","周一",["按导师意见改定，转 PDF 备份","PPT 定稿，计时练习两遍（控制在 6 分钟内）","把“答辩准备”里的问题每题口头答一遍"]],
-["10月27日","周二 · 截止",["提交开题报告","开题答辩；记下每位老师的意见原话，答辩后当天整理成修改清单"]]
+["10月23日","周五",["修改“问题与建议”中所有「必须改」：H2、H4 依据，错别字，标题重复，术语统一","画模型图（图 1）放进研究模型一节","重写研究缺口那句话","研究方法补写：变量测量表、样本量与伦理、分析策略（CFA + PROCESS 模型号）"]],
+["10月24日","周六",["上午：研究意义拆成理论与实践两段，通读一遍后发给导师","下午到晚上：检查引用编号与参考文献表逐一对应；处理「建议改」里来得及改的几条","导师有回复就当晚改"]],
+["10月25日","周日 · 提交",["按导师意见定稿，最后检查格式、表号图号、页码","转 PDF 并备份，提交开题报告","把提交版留一份，答辩时按这一版讲，不要再改动内容"],true],
+["10月26日","周一",["读完 A 级剩余 12 篇卡片","做答辩 PPT（按右侧 10 页结构），内容与提交版保持一致","计时练习两遍（控制在 6 分钟内）；把“答辩准备”里的问题每题口头答一遍"]],
+["10月27日","周二 · 答辩",["上午再完整练一遍，重点练模型图那一页","开题答辩；记下每位老师的意见原话，答辩后当天整理成修改清单"],true]
 ];
 
 const QA=[
@@ -977,11 +978,11 @@ $("#maprows").innerHTML=MAP.map(r=>`<tr><td class="num">${r[0]}</td><td>${r[1]}<
 
 let done={};try{done=JSON.parse(localStorage.getItem("day-done")||"{}")}catch(e){done={}}
 const now=new Date();const md=(now.getMonth()+1)+"月"+now.getDate()+"日";
-$("#days").innerHTML=DAYS.map(([d,w,tasks],i)=>`<div class="day ${d===md?"today":""} ${i===DAYS.length-1?"dl":""}"><div class="d">${d}<span>${w}</span></div><div>${tasks.map((t,j)=>{const id=`t${i}-${j}`;return `<label for="${id}"><input type="checkbox" id="${id}" ${done[id]?"checked":""} onchange="done['${id}']=this.checked;try{localStorage.setItem('day-done',JSON.stringify(done))}catch(e){}"><span>${t}</span></label>`}).join("")}</div></div>`).join("");
+$("#days").innerHTML=DAYS.map(([d,w,tasks],i)=>`<div class="day ${d===md?"today":""} ${DAYS[i][3]?"dl":""}"><div class="d">${d}<span>${w}</span></div><div>${tasks.map((t,j)=>{const id=`t${i}-${j}`;return `<label for="${id}"><input type="checkbox" id="${id}" ${done[id]?"checked":""} onchange="done['${id}']=this.checked;try{localStorage.setItem('day-done',JSON.stringify(done))}catch(e){}"><span>${t}</span></label>`}).join("")}</div></div>`).join("");
 
 $("#qalist").innerHTML=QA.map(([q,a])=>`<details><summary>${q}</summary><div class="a">${a.split("|").map(x=>`<p>${x}</p>`).join("")}</div></details>`).join("");
 
-(function(){const dl=new Date(2026,9,27);const t=new Date();t.setHours(0,0,0,0);const n=Math.round((dl-t)/864e5);$("#cd").textContent=n>=0?n:0;})();
+(function(){const t=new Date();t.setHours(0,0,0,0);[["#cd",27],["#cd1",25]].forEach(([id,d])=>{const n=Math.round((new Date(2026,9,d)-t)/864e5);$(id).textContent=n>=0?n:0;});})();
 
 // cite links: [n] in prose jumps to card
 document.addEventListener("click",e=>{const a=e.target.closest("a[data-ref]");if(!a)return;e.preventDefault();state={tier:"all",sec:"all",q:""};$("#q").value="";renderFilters();renderLit();const c=document.getElementById("ref"+a.dataset.ref);if(c){c.open=true;c.scrollIntoView({block:"start"})}});
