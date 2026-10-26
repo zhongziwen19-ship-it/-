@@ -362,6 +362,15 @@ function renderNow() {
   list.replaceChildren();
   const rows =byTab[state.tab].filter(matchCat).sort(sortJobs);
 
+  if (state.dbFailed) {
+    const e = el("div", "empty");
+    e.append(
+      el("b", null, "岗位数据没有加载出来"),
+      el("span", null, "请在已登录 claude.ai 的 Claude App 或浏览器里打开这个链接。微信里直接点开、或在没登录的浏览器里打开，都读不到数据。网络慢时刷新一下页面再试。")
+    );
+    list.append(e);
+    return;
+  }
   if (!state.loaded.jobs) {
     const e = el("div", "empty");
     e.append(el("b", null, "正在加载岗位…"));
@@ -427,8 +436,8 @@ render();
 (async () => {
   const db = window.claude ? await window.claude.use("db") : null;
   if (!db) {
-    $("run").textContent = "无法连接看板数据。请登录 claude.ai 后在浏览器中打开这个页面。";
-    state.loaded.jobs = true;
+    $("run").textContent = "无法连接看板数据。";
+    state.dbFailed = true;
     render();
     return;
   }
@@ -443,7 +452,7 @@ render();
     state.jobs = new Map(snap.docs.map((d) => [d.id, { id: d.id, ...d.data() }]));
     state.loaded.jobs = true;
     render();
-  }, (e) => showBanner("岗位数据加载失败（" + e.code + "），请刷新页面。"));
+  }, (e) => { showBanner("岗位数据加载失败（" + e.code + "），请刷新页面。"); state.dbFailed = true; render(); });
 
   db.collection("status").limit(1000).onSnapshot((snap) => {
     state.status = new Map(snap.docs.map((d) => [d.id, d.data()]));
