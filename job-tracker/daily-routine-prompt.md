@@ -21,6 +21,7 @@
 2. **排除名单**：`status` 里是“被拒绝”或“不感兴趣”的岗位 id，以及这些公司的同类岗位，本次一律不新增、不标记变化、不写进简报。
 3. **抓取 + 搜索**：
    - 每次必抓（curl）：牛企直聘上海按截止日期排序列表 https://campus.niuqizp.com/deadline-shanghai-4/ （可翻 -1/ -2/ 等页）、最新校招 https://campus.niuqizp.com/schedulenew-1/ 、管培生 https://campus.niuqizp.com/schedulemt-shanghai-1/ 。从中挑出与她匹配的非技术岗。
+   - 每次必抓（curl）：上海市国资委“国企招聘”栏目 https://www.gzw.sh.gov.cn/shgzw_xxgk_cqzp/ ，看最近发布的 2027 届校招公告。公告正文多是长图：下载图片（`https://www.gzw.sh.gov.cn` + 页面里的 `/cmsres/...` 路径），用 python3 PIL 按 1500px 高切段后用 Read 看图，找岗位类别、投递链接和截止日期。这是官方来源，核对成功的不用写“待核实”。
    - 对看板里 reason 写着“待核实”、applyUrl 为空或截止日期在 10 天内的岗位，尽量 curl 企业官网或简章原文核对截止日期和投递入口；核对成功就去掉“待核实”并补上 applyUrl。
    - 补官网链接时，先用 WebSearch 找“公司名 + 校园招聘 官网”的真实网址，再用 curl 验证能打开（返回 200）才写入 applyUrl。**不要凭印象猜域名**。
    - curl 报 `CONNECT tunnel failed, response 502` 或返回 000，说明域名不存在或对方服务器连不上，**不是网络策略拦截**（网络已全开）。这种情况换个网址或改用搜索，简报里也不要写“被网络策略拦截”。
